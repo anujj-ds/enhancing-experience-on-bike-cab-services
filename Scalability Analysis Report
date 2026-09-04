@@ -187,17 +187,3 @@ Backup and recovery planning makes sure that if something goes wrong — a serve
 - **Disaster recovery plan:** Define clear recovery targets — for example, how much data loss is acceptable (Recovery Point Objective) and how fast the system must come back online (Recovery Time Objective) — and design the backup system to meet them.
 - **Automatic failover:** If the primary region goes down, traffic should automatically switch to a standby region with minimal manual effort.
 
----
-
-## 12. Summary
-
-| Area | At 1,000,000 Users | At 5,000,000 Users |
-|---|---|---|
-| Application servers | Several Flask app copies behind a load balancer, auto-scaling | Many more copies, split by service (booking, chat, routing) as microservices |
-| Database | Managed PostgreSQL with read replicas | Sharded/partitioned database with multiple replicas per region |
-| Storage | Cloud object storage (e.g. S3) for logs, maps, chat history | Multi-region object storage with lifecycle rules and cold storage tiers |
-| Caching | Redis for fares, routes, session data | Distributed Redis cluster, edge caching via CDN |
-| Traffic management | API gateway with rate limiting | API gateway + WAF + regional traffic routing |
-| Monitoring | Basic dashboards and alerts | Full observability stack with distributed tracing |
-
-Overall, the core idea of RideEase — real road routing, live translated chat, and simple fare estimation — does not need to change as the app grows. What changes is the infrastructure underneath it: moving from one Flask process on one laptop, to a properly hosted, load-balanced, cached, monitored, and secured cloud system that can be broken into smaller independent services as demand increases from thousands to millions of users.
