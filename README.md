@@ -20,7 +20,7 @@ A ride-hailing web app concept (inspired by Rapido), built as an academic projec
 - **Backend:** Python, Flask
 - **APIs:** OSRM (free routing, no key required), Google Gemini API (translation)
 
-## Setup
+## Installation Guide
 
 1. Install dependencies:
    ```
