@@ -1,15 +1,12 @@
 # RideEase — Scalability Analysis Report
 **Scaling the system from concept to 1,000,000 and 5,000,000 users**
-CIA III – Digital Business Systems | ECD223-3
 
 ---
 
 ## 1. Introduction
 
 RideEase is a ride-hailing web app built as an academic project, similar in idea to apps like Rapido. It lets a rider book a trip, see a real road route between pickup and drop (using OpenStreetMap and OSRM), get a fare estimate, and chat with the driver through a live AI translation bot (using Google's Gemini API).
-
 Right now, RideEase runs as a simple single-session demo: one Flask backend, no database, no user accounts, and everything running on one machine. This report explains, in simple terms, how the system would need to change if it grew from a small demo into a real product used by 1,000,000 people, and later by 5,000,000 people.
-
 For each area below, we explain the problem that shows up as the app grows, and how it would be solved at each stage. The goal is to show the thinking and the plan — this report does not require actually building or hosting the system at that scale.
 
 **Current Setup (Starting Point)**
