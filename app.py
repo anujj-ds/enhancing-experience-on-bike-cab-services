@@ -1,4 +1,5 @@
 import os
+from functools import wraps
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 from google import genai
@@ -9,6 +10,17 @@ app = Flask(__name__)
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
+API_KEY = os.environ.get("API_KEY", "")
+
+
+def require_api_key(view_func):
+    @wraps(view_func)
+    def wrapped(*args, **kwargs):
+        if not API_KEY or request.headers.get("X-API-Key") != API_KEY:
+            return jsonify({"error": "Unauthorized"}), 401
+        return view_func(*args, **kwargs)
+    return wrapped
 
 BASE_FARE = 15
 RATE_PER_KM = 12
@@ -28,6 +40,7 @@ def home():
 
 
 @app.route("/api/estimate-fare", methods=["POST"])
+@require_api_key
 def estimate_fare():
     data = request.get_json(force=True)
     distance_km = data.get("distance_km")
@@ -47,6 +60,7 @@ def estimate_fare():
 
 
 @app.route("/api/translate", methods=["POST"])
+@require_api_key
 def translate_message():
     data = request.get_json(force=True)
     text = data.get("text", "").strip()
@@ -82,6 +96,7 @@ def translate_message():
 
 
 @app.route("/api/sos", methods=["POST"])
+@require_api_key
 def sos():
     return jsonify({
         "status": "not_configured",
@@ -90,4 +105,4 @@ def sos():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=os.environ.get("FLASK_DEBUG", "false").lower() == "true")
