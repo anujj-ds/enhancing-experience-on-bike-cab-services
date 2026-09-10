@@ -141,3 +141,18 @@ Requests per Second (RPS) = RPM ÷ 60
   chat/translation, and fare calculation, each independently scalable.
 
 ---
+
+## Summary
+
+| Metric | Key Takeaway |
+|---|---|
+| User Growth | 10,000 → 30,518 users over 5 years at 25% annual growth |
+| Peak Concurrency | 10% of registered users active at once — scales linearly with registrations |
+| Request Load | 5 req/min/user means even moderate concurrency creates thousands of requests/second |
+
+**Overall Interpretation:** RideEase is currently a single-session academic demo with
+no database, no authentication, and free-tier APIs (OSRM public server, Gemini free key).
+The calculations above show that even modest real-world growth (100,000+ users) would
+demand a production-grade backend: a real database for ride history and accounts,
+a paid/self-hosted routing engine, rate-limited and cached AI translation calls, and
+horizontal scaling via a proper WSGI server and load balancer.
