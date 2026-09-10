@@ -98,3 +98,46 @@ Peak Concurrent Users = Registered Users × 10%
   matching, and dedicated infrastructure for map routing and AI chat.
 
 ---
+
+## 3. Requests Per Minute & Per Second (5 requests/min per active user)
+
+**Formula:**
+Requests per Minute (RPM) = Active Users × 5
+Requests per Second (RPS) = RPM ÷ 60
+
+---
+
+### 10,000 active users
+- **Values:** RPM = 10,000 × 5; RPS = RPM ÷ 60
+- **Calculation:** RPM = 50,000 | RPS = 50,000 ÷ 60 = 833.33
+- **Result:** 50,000 requests/minute → ≈ 833 requests/second
+- **Interpretation:** This includes map updates, fare estimate calls, and chat
+  translation requests. A single Flask dev server (as used in this project)
+  cannot handle this — it would need a production WSGI server (e.g., Gunicorn).
+
+### 50,000 active users
+- **Values:** RPM = 50,000 × 5; RPS = RPM ÷ 60
+- **Calculation:** RPM = 250,000 | RPS = 250,000 ÷ 60 = 4,166.67
+- **Result:** 250,000 requests/minute → ≈ 4,167 requests/second
+- **Interpretation:** The free OSRM public instance and Gemini free-tier API key
+  would both hit rate limits well before this point. Self-hosted OSRM and a paid
+  Gemini plan would be mandatory.
+
+### 100,000 active users
+- **Values:** RPM = 100,000 × 5; RPS = RPM ÷ 60
+- **Calculation:** RPM = 500,000 | RPS = 500,000 ÷ 60 = 8,333.33
+- **Result:** 500,000 requests/minute → ≈ 8,333 requests/second
+- **Interpretation:** This request rate needs horizontal scaling — multiple backend
+  instances behind a load balancer, plus caching of repeated route calculations
+  to reduce OSRM load.
+
+### 500,000 active users
+- **Values:** RPM = 500,000 × 5; RPS = RPM ÷ 60
+- **Calculation:** RPM = 2,500,000 | RPS = 2,500,000 ÷ 60 = 41,666.67
+- **Result:** 2,500,000 requests/minute → ≈ 41,667 requests/second
+- **Interpretation:** This is data-center scale traffic. RideEase in its current
+  form (no login, no DB, single Flask file) is designed only as a proof-of-concept
+  and would need a complete production redesign — separate services for routing,
+  chat/translation, and fare calculation, each independently scalable.
+
+---
