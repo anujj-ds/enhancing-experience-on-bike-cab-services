@@ -184,31 +184,37 @@ Backup and recovery planning makes sure that if something goes wrong — a serve
 - **Disaster recovery plan:** Define clear recovery targets — for example, how much data loss is acceptable (Recovery Point Objective) and how fast the system must come back online (Recovery Time Objective) — and design the backup system to meet them.
 - **Automatic failover:** If the primary region goes down, traffic should automatically switch to a standby region with minimal manual effort.
 
+---
+
 ## 12. Third-Party API and Dependency Scaling
 RideEase depends on two external services it doesn't control: OSRM for routing and Google's Gemini API for chat translation. As the number of users grows, these external dependencies can quietly become the biggest bottleneck, even if RideEase's own servers are scaled perfectly.
 
-At 1,000,000 Users
-Move off the free public OSRM server: The free public OSRM instance is meant for light testing, not production traffic. Host a dedicated OSRM server (or a managed routing service) so RideEase isn't sharing capacity — or getting rate-limited — with other unrelated users of the public service.
-Handle Gemini API limits and costs: Track Gemini API usage against its rate limits and quotas, and budget for it as a real running cost, not a free demo key. Add retry logic with backoff so a temporary API slowdown doesn't break the chat feature.
-Add fallbacks: If OSRM or Gemini is temporarily unavailable, show a reasonable fallback (like a straight-line distance estimate, or untranslated chat with a warning) instead of letting the whole booking flow fail.
+**At 1,000,000 Users**
+- **Move off the free public OSRM server: The free public OSRM instance is meant for light testing, not production traffic. Host a dedicated OSRM server (or a managed routing service) so RideEase isn't sharing capacity — or getting rate-limited — with other unrelated users of the public service.
+- **Handle Gemini API limits and costs: Track Gemini API usage against its rate limits and quotas, and budget for it as a real running cost, not a free demo key. Add retry logic with backoff so a temporary API slowdown doesn't break the chat feature.
+- **Add fallbacks: If OSRM or Gemini is temporarily unavailable, show a reasonable fallback (like a straight-line distance estimate, or untranslated chat with a warning) instead of letting the whole booking flow fail.
 
-At 5,000,000 Users
-Self-host or mirror routing data: Run multiple OSRM instances across regions, each pre-loaded with local map data, so routing requests don't all funnel through one server or one region.
-Multi-provider translation strategy: Consider having a backup translation provider alongside Gemini, so chat translation keeps working even if one provider has an outage or usage cap issue.
-SLAs with vendors: At this scale, negotiate proper service-level agreements (SLAs) with any third-party providers being used, so there are guarantees around uptime and response time, not just best-effort free-tier access.
+**At 5,000,000 Users**
+- **Self-host or mirror routing data: Run multiple OSRM instances across regions, each pre-loaded with local map data, so routing requests don't all funnel through one server or one region.
+- **Multi-provider translation strategy: Consider having a backup translation provider alongside Gemini, so chat translation keeps working even if one provider has an outage or usage cap issue.
+- **SLAs with vendors: At this scale, negotiate proper service-level agreements (SLAs) with any third-party providers being used, so there are guarantees around uptime and response time, not just best-effort free-tier access.
+
+---
 
 ## 13. Cost Optimisation and DevOps Practices
 Scaling isn't only a technical problem — it's also a cost and operations problem. More servers, databases, and API calls all cost more money, and more moving parts need a proper process to deploy and update safely.
 
-At 1,000,000 Users
-Right-size resources: Use auto-scaling so the app only pays for extra servers during busy hours, rather than running peak-level capacity all day.
-Set up a CI/CD pipeline: Automate testing and deployment (using tools like GitHub Actions or GitLab CI) so new features and bug fixes can be released safely and frequently, without manual, error-prone deployment steps.
-Track spend: Set up billing alerts and cost dashboards so infrastructure spend (servers, database, API calls) is visible and doesn't grow unexpectedly.
+**At 1,000,000 Users**
+- **Right-size resources: Use auto-scaling so the app only pays for extra servers during busy hours, rather than running peak-level capacity all day.
+- **Set up a CI/CD pipeline: Automate testing and deployment (using tools like GitHub Actions or GitLab CI) so new features and bug fixes can be released safely and frequently, without manual, error-prone deployment steps.
+- **Track spend: Set up billing alerts and cost dashboards so infrastructure spend (servers, database, API calls) is visible and doesn't grow unexpectedly.
 
-At 5,000,000 Users
-Reserved and spot capacity: Mix long-term reserved cloud capacity (cheaper, for predictable baseline load) with on-demand or spot capacity (for handling sudden spikes), to control costs at large scale.
-Blue-green or canary deployments: Roll out new versions of the app to a small slice of users first, and only push it to everyone once it's confirmed stable — reducing the risk of an update breaking the app for millions of people at once.
-Dedicated DevOps/SRE ownership: At this size, have a dedicated team responsible for infrastructure reliability, cost, and incident response, rather than leaving it as a side task for developers.
+**At 5,000,000 Users**
+- **Reserved and spot capacity: Mix long-term reserved cloud capacity (cheaper, for predictable baseline load) with on-demand or spot capacity (for handling sudden spikes), to control costs at large scale.
+- **Blue-green or canary deployments: Roll out new versions of the app to a small slice of users first, and only push it to everyone once it's confirmed stable — reducing the risk of an update breaking the app for millions of people at once.
+- **Dedicated DevOps/SRE ownership: At this size, have a dedicated team responsible for infrastructure reliability, cost, and incident response, rather than leaving it as a side task for developers.
+
+---
 
 ## 14. Summary
 
