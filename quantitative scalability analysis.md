@@ -154,5 +154,5 @@ Requests per Second (RPS) = RPM ÷ 60
 no database, no authentication, and free-tier APIs (OSRM public server, Gemini free key).
 The calculations above show that even modest real-world growth (100,000+ users) would
 demand a production-grade backend: a real database for ride history and accounts,
-a paid/self-hosted routing engine, rate-limited and cached AI translation calls, and
+a paid/self-hosted routing engine, rate-limited and cached AI translation calls and
 horizontal scaling via a proper WSGI server and load balancer.
