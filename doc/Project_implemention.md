@@ -1,241 +1,114 @@
-# RideEase — Project Implementation
+# RideEase — CIA III Project Implementation Work Log
 
-A ride-hailing web app concept (inspired by Rapido), built as an academic project. Riders book a ride with a real pickup-to-drop road route, get a live fare estimate, and chat with the driver through an AI translation bot.
+**Project:** RideEase — a ride-hailing web app with real road-based routing, live fare estimation, AI-powered chat translation (rider ↔ driver), and a simulated route-deviation / SOS safety layer.
 
----
 
-## 1. Project Overview
+## 1. Team Responsibilities
 
-| Field | Detail |
+| Member | Primary responsibilities |
 |---|---|
-| Project type | Academic project (concept / working demo build) |
-| Inspiration | Rapido-style ride-hailing UX |
-| Core stack | Python 3 + Flask backend, HTML/CSS/JavaScript + Leaflet.js frontend |
-| Key integrations | OSRM (road routing), Google Gemini API (chat translation) |
-| Current deployment | Local / single-instance demo (not hosted) |
+| Amritha | Firewall / network security; security mechanisms for the API layer; failure & recovery (application/server and network); security testing/evidence; shared integration, testing and documentation work |
+| Anuj | Backend/database; ride & fare data schema and diagram; database relationships/queries; ride booking & history CRUD; business transactions (ride lifecycle); fare & driver-matching ranking algorithm; API–database integration; query/transaction optimisation; shared integration, testing and documentation work |
+| Riya | Component 11 backend; Gemini-powered chat-translation service; translation API integration/validation; API error handling/logging; Component 14 technical improvement; individual technical evidence; shared integration, testing and documentation work |
+| Nayana | Authentication; frontend–backend integration; encryption/data protection; authorization/security controls; failure & recovery (storage/security); Component 14 encryption/auth enhancement; integration testing/bug fixing; quantitative scalability calculations; shared integration, testing and documentation work |
+| Arunima | Architecture/component map; draw.io architecture and data flow; frontend (map, booking, chat, SOS UI); route-deviation UX; ride-history frontend UX; Component 14 responsive UI enhancement; shared integration, testing and documentation work |
 
-### 1.1 Problem Statement
-Riders and drivers on short intra-city trips often don't share a common language, which slows down coordinating pickup points and directions. Riders also want an upfront, accurate fare based on a real road route rather than a straight-line estimate. RideEase addresses both: real road-based routing for trip planning and fare estimation, plus an AI-powered translation layer so rider and driver can chat comfortably in their own languages.
+## 2. Status Definitions
 
-### 1.2 Target Users
-- **Riders** — commuters booking short intra-city trips who want an accurate fare estimate and may prefer to chat in a regional language.
-- **Drivers** — represented in this prototype by a simulated engine (a vehicle marker moving along the route, preset Kannada reply phrases sent through the translation pipeline).
-- **Evaluators / instructors** — the audience for this academic build.
+| Status | Meaning |
+|---|---|
+| Pending | Task identified but development has not started. |
+| In Progress | Development has started but the task is not complete. |
+| Completed | Implementation is complete and has been verified. |
+| Blocked | Development cannot proceed because of a documented technical dependency or problem. |
+| Reopened | A previously completed task has been found to contain a problem and requires additional work. |
 
-### 1.3 Core Features
-- **Real road routing** — pickup and drop connected via an actual road route (not a straight line), using OpenStreetMap + OSRM.
-- **AI translation chat** — powered by Google's Gemini API; auto-detects the language typed and translates both sides of the conversation (default target: Kannada).
-- **Fare estimation** — calculated from real route distance (₹15 base + ₹12/km).
-- **Route deviation alert** — simulates a notification if the driver goes off the planned route (auto-triggers ~9s after ride confirmation, or manually via a dev button).
-- **Cash-only payment** — no UPI integration in this version.
-- **SOS button** — present in the UI but intentionally inactive; shows an "under development" message since it requires an emergency-contact setup flow not yet built.
+## 3. Implementation Plan
 
----
+| Mission | Start | End | Days | Primary Owners | Key Output / Definition of Done | Dependencies | Status | GitHub / Evidence |
+|---|---|---|---:|---|---|---|---|---|
+| **M01 — Setup + Traceability** | 19 Aug | 19 Aug | 1 | Everyone | GitHub structure ready; `docs/` folder present; `project-implementation.md` and team tracker started. | None | Pending | Repo link / initial commit |
+| **M02 — Architecture + Data Design** | 2 Sep | 4 Sep | 3 | Arunima + Anuj | Architecture map, draw.io, booking/chat sequence diagrams and ride-data design agreed. | M01 | In Progress | Diagram / database evidence |
+| **M03 — Backend Foundation** | 3 Sep | 6 Sep | 4 | Anuj + Riya | Core Flask API (`/api/estimate-fare`, `/api/translate`, `/api/sos`), Component 11 backend and database connectivity are runnable. | M02 | Pending | Commits + API/database tests |
+| **M04 — Frontend Foundation** | 3 Sep | 6 Sep | 4 | Arunima | Core UI, map + booking panel, navigation and trip-tracking view are working. | M02 | Pending | Screenshots + commit |
+| **M05 — Authentication + Security Base** | 5 Sep | 8 Sep | 4 | Nayana + Amritha | Authentication, authorization, encryption and firewall/network controls attached to the design. | M03 + M04 | Pending | Security configuration/tests |
+| **M06 — Custom Features Sprint** | 7 Sep | 11 Sep | 5 | Arunima + Riya + Anuj | Real road routing, Gemini chat translation, route-deviation alert, ride-history CRUD and fare/ranking algorithm work end-to-end. | Riya + Arunima + Nayana | Pending | Feature demos + commits |
+| **M07 — Full Integration** | 10 Sep | 13 Sep | 4 | Everyone | Interface → application logic → data → output works for the main booking and chat workflows. | M06 | Pending | Working demo + API/DB evidence |
+| **M08 — Failure + Recovery Drill** | 12 Sep | 14 Sep | 3 | Amritha + Anuj + Nayana | Application/server, database, network, storage and security failures documented with detection/recovery actions. | M07 | Pending | Test results + recovery notes |
+| **M09 — Scalability + Quantitative Analysis** | 14 Sep | 16 Sep | 3 | Nayana + Arunima | 1M/5M scaling architecture plus required calculations and interpretations completed (builds on existing Scalability Analysis doc). | M07 | Pending | Calculations + architecture |
+| **M10 — Documentation + Worklog Audit** | 15 Sep | 17 Sep | 3 | Everyone | `architecture.md` and `project-implementation.md` current; significant tasks have status and evidence. | All build work | Pending | `docs/` commits |
+| **M11 — Final Testing + Viva Prep** | 16 Sep | 17 Sep | 2 | Everyone | Working demo rehearsed; each student can locate and explain their implementation. | M08 | Pending | Demo checklist + evidence |
+| **M12 — Report + Final Freeze** | 17 Sep | 18 Sep | 2 | Everyone | Final report assembled; required technical sections checked; regression check complete. | M10 + M11 | Pending | Final repo state + report |
 
-## 2. Technology Stack
+## 4. Official Work Log
 
-| Layer | Technology | Purpose |
+| Task ID | Task | Component | Assigned To | Status | Completed By | Date Completed | AI Assistance | GitHub? | Evidence / Commit / File | Notes / Acceptance Criteria |
+|---|---|---|---|---|---|---|---|---|---|---|
+| T001 | Architecture & Component Map | Architecture | Arunima | Pending | — | — | No | No | — | Define business problem, target users, major components and technology mapping. |
+| T002 | Current System Architecture Diagram | Architecture | Arunima | Pending | — | — | No | No | — | Create the draw.io architecture diagram (frontend / Flask backend / OSRM / Gemini). |
+| T003 | Data Flow / Sequence Diagrams | Architecture | Arunima | Pending | — | — | No | No | — | Map Interface → Application Logic → Data Layer → Business Output for the booking and chat-translation flows. |
+| T004 | Frontend Base Structure & Navigation | Frontend | Arunima | Pending | — | — | No | No | — | Build top nav, side panel and routing between booking/trip views. |
+| T005 | Interactive Map & Real Road Routing UI | Frontend / Feature | Arunima | Pending | — | — | No | No | — | Leaflet map, pickup/drop markers, OSRM route polyline and fare card. |
+| T006 | Chat, Deviation Alert & SOS UX | Frontend / Feature | Arunima | Pending | — | — | No | No | — | Build chat modal, route-deviation banner and SOS modal with clear status feedback. |
+| T007 | Ride History / Past Rides Frontend UX | Frontend / Feature | Arunima | Pending | — | — | No | No | — | Add a ride-history view (cancelled/completed rides) with restore/clear-style actions, mirroring a Recycle-Bin UX pattern. |
+| T008 | Component 14: Responsive Theme/UI Enhancement | Component 14 | Arunima | Pending | — | — | No | No | — | Individual technical enhancement to the responsive layout/theme; verify independently. |
+| T009 | Database Schema — 6+ Core Entities | Database | Anuj | Pending | — | — | No | No | — | Design persistent schema: Users, Rides, Drivers, Fare_Records, Chat_Messages, Driver_Locations, SOS_Events. |
+| T010 | ER / Database Diagram | Database | Anuj | Pending | — | — | No | No | — | Create ER/database diagram and keep it aligned with implementation. |
+| T011 | Database Relationships & Queries | Database | Anuj | Pending | — | — | No | No | — | Implement meaningful relationships and queries for users, rides, drivers, fares and chat messages. |
+| T012 | Ride Booking & History CRUD | Database / Feature | Anuj | Pending | — | — | No | No | — | Implement create/read/update/cancel for rides, including soft-delete/restore of cancelled trips. |
+| T013 | Core Backend/API Layer | Backend | Anuj | Pending | — | — | No | No | — | Extend `app.py` (`/api/estimate-fare`, `/api/translate`, `/api/sos`) into a persistent, database-backed API layer. |
+| T014 | Business Transactions — Ride Lifecycle | Business Logic | Anuj | Pending | — | — | No | No | — | Implement the ride state machine: requested → confirmed → in progress → completed / cancelled, with valid transitions enforced. |
+| T015 | Fare & Driver-Matching Ranking Algorithm | Business Algorithm | Anuj | Pending | — | — | No | No | — | Extend the flat fare formula into a non-trivial ranking/pricing algorithm (e.g. distance, duration, demand); document inputs, processing and outputs. |
+| T016 | API ↔ Database Integration | Integration | Anuj | Pending | — | — | No | No | — | Connect backend APIs to persistent storage and verify end-to-end data operations. |
+| T017 | Component 14: Database Query/Transaction Optimisation | Component 14 | Anuj | Pending | — | — | No | No | — | Individual technical improvement to query efficiency or transaction validation; verify independently. |
+| T018 | Authentication / Identification | Authentication | Nayana | Pending | — | — | No | No | — | Implement rider/driver authentication/identification flow. |
+| T019 | Core Frontend ↔ Backend Integration | Implementation / Integration | Nayana | Pending | — | — | No | No | — | Join core booking/chat frontend flows to backend APIs and ensure data is exchanged correctly. |
+| T020 | Encryption & Data Protection | Security | Nayana | Pending | — | — | No | No | — | Implement appropriate encryption/data protection for API keys, ride data and chat messages; document the mechanism. |
+| T021 | Authorization & Security Controls Integration | Security | Nayana | Pending | — | — | No | No | — | Integrate authentication, authorization and protected operations (e.g. only the assigned rider can view/cancel a ride). |
+| T022 | Failure & Recovery — Storage/Security | Failure & Recovery | Nayana | Pending | — | — | No | No | — | Document and test recovery for security or storage-related failure scenarios. |
+| T023 | Component 14: Encryption/Auth Technical Enhancement | Component 14 | Nayana | Pending | — | — | No | No | — | Individual technical contribution improving encryption/authentication, with test evidence. |
+| T024 | End-to-End Integration Testing & Bug Fixing | Testing / Integration | Nayana | Pending | — | — | No | No | — | Run integration tests, fix technical defects and verify system workflow. |
+| T025 | Quantitative Scalability Calculations | Scalability | Nayana | Pending | — | — | No | No | — | Complete required user-growth, peak-concurrency and request-rate calculations with formula, values, result and interpretation (build on the existing Scalability Analysis doc). |
+| T026 | Firewall / Network Security | Security | Amritha | Pending | — | — | No | No | — | Design/attach firewall or network controls appropriate to the system architecture (API layer, OSRM/Gemini egress). |
+| T027 | Security Mechanisms — 8+ Controls | Security Documentation | Amritha | Pending | — | — | No | No | — | Document at least eight security mechanisms across authentication, authorization, data, network, database, backup, monitoring and password protection. |
+| T028 | Failure & Recovery — Application/Server | Failure & Recovery | Amritha | Pending | — | — | No | No | — | Document impact, detection and recovery for application/server failure. |
+| T029 | Failure & Recovery — Network | Failure & Recovery | Amritha | Pending | — | — | No | No | — | Document impact, detection and recovery for network failure (e.g. OSRM/Gemini unreachable). |
+| T030 | Component 14: Security / Network Test | Component 14 | Amritha | Pending | — | — | No | No | — | Individual test of firewall/network/security behaviour and evidence collection. |
+| T031 | Security Verification & Evidence Collection | Security / Evidence | Amritha | Pending | — | — | No | No | — | Collect screenshots, test results, configuration evidence and link to GitHub/files. |
+| T032 | Component 11 — Backend Module | Backend / Component 11 | Riya | Pending | — | — | No | No | — | Implement the assigned backend portion for Component 11 with traceable code changes. |
+| T033 | Gemini AI Chat-Translation Service | Backend / Feature | Riya | Pending | — | — | No | No | — | Implement/extend the `/api/translate` service that detects language and translates rider ↔ driver messages via Gemini. |
+| T034 | Translation API Integration & Validation | Backend / Feature | Riya | Pending | — | — | No | No | — | Connect the translation service to the chat UI and validate translated output (including the "no API key" fallback path). |
+| T035 | API Error Handling & Logging | Backend | Riya | Pending | — | — | No | No | — | Add meaningful API validation, error handling and logging for fault diagnosis across all endpoints. |
+| T036 | Component 14: AI Translation Technical Improvement | Component 14 | Riya | Pending | — | — | No | No | — | Individual technical improvement to the chat-translation feature; test and record evidence. |
+| T037 | Individual Technical Test & Demo Evidence | Testing / Evidence | Riya | Pending | — | — | No | No | — | Prepare proof of personal implementation: commit, file/module, test result or working demonstration. |
+| T038 | Cross-Member End-to-End Integration | Integration | Everyone | Pending | — | — | No | No | — | Verify Interface → Application Logic → Data Layer → Business Output across the main booking and chat workflows. |
+| T039 | System Testing + Failure Scenarios + Recovery Demo | Testing / Reliability | Everyone | Pending | — | — | No | No | — | Test core workflows, five failure categories and recovery behaviour; record evidence. |
+| T040 | `docs/project-implementation.md` Evidence Audit | Documentation / Work Log | Everyone | Pending | — | — | No | No | — | Check that significant tasks have correct task ID, component, owner, status, completion details, AI assistance and evidence. |
+
+## 5. RideEase Feature Traceability
+
+| RideEase feature / requirement | Main task(s) | Primary owner(s) |
 |---|---|---|
-| Frontend | HTML / CSS / JavaScript | Structure, styling, interactivity |
-| Frontend | Leaflet.js | Interactive map rendering, markers, route polyline |
-| Backend | Python 3 + Flask | Web server and REST API (`app.py`) |
-| Backend | python-dotenv | Loads `GEMINI_API_KEY` from a local `.env` file |
-| Backend | google-genai SDK | Calls the Gemini API for translation, server-side |
-| External API | OSRM | Free road-routing engine, no API key required |
-| External API | Google Gemini API | Language detection and translation |
+| Real road routing (Leaflet + OSRM) | T005, T008 | Arunima |
+| AI chat translation (Gemini) | T033, T034, T036 | Riya |
+| Route-deviation alert & SOS UX | T006 | Arunima |
+| Ride history / cancelled rides | T007, T012 | Arunima + Anuj |
+| Backend/API | T013, T016, T032, T035 | Anuj + Riya |
+| Database | T009–T012, T017 | Anuj |
+| Authentication, encryption and authorization | T018, T020, T021, T023 | Nayana |
+| Firewall/network security | T026, T029, T030 | Amritha |
+| Business transactions and fare/ranking algorithm | T014, T015 | Anuj |
+| Failure and recovery | T022, T028, T029, T039 | Everyone |
+| Architecture and data flow | T001–T003 | Arunima |
+| End-to-end integration | T019, T024, T038 | Nayana + Amritha |
+| Scalability / quantitative analysis | T025 | Arunima |
 
-**Why these choices:**
-- **Leaflet + OSRM** — free, no API key needed; OSRM returns real driving routes (GeoJSON), not straight-line distances.
-- **Flask** — lightweight, quick to stand up a handful of JSON API routes.
-- **Gemini API** — strong multilingual translation with a simple SDK; one prompt both detects source language and translates.
-- **python-dotenv** — keeps the API key out of source control.
+## 6. Individual Evidence Checklist
 
----
-
-## 3. System Architecture
-
-RideEase is a two-tier web app: a Flask backend serving pages and a small JSON API, and a browser-based frontend handling all UI, map rendering, and state. The server is **stateless** — nothing is written to disk between requests.
-
-### 3.1 Component Table
-
-| Layer | Component | Responsibility |
-|---|---|---|
-| Frontend | Booking panel | Collects pickup/drop, displays fare, confirms ride |
-| Frontend | Map panel (Leaflet.js) | Renders map, markers, route line, vehicle position |
-| Frontend | Chat modal | Sends/receives messages, displays translations |
-| Frontend | SOS modal | Placeholder UI for the emergency feature |
-| Backend | Flask app (`app.py`) | Serves pages, exposes REST endpoints |
-| Backend | `/api/estimate-fare` | Calculates fare from route distance/duration |
-| Backend | `/api/translate` | Calls Gemini API, returns translated text |
-| Backend | `/api/sos` | Stub endpoint for the future SOS flow |
-| External | OSRM routing service | Returns real road-route geometry, distance, duration |
-| External | Google Gemini API | Detects language and translates chat messages |
-
-### 3.2 Authentication & Data
-There is **no authentication** and **no database** in the current build — a deliberate simplification for a single-session academic demo. All trip state (pickup/drop, route, fare, chat history) lives only in browser memory for the duration of the page session; nothing persists once the tab closes or the server restarts. The only stored artifact is the local `.env` file holding `GEMINI_API_KEY`.
-
----
-
-## 4. Data Flow
-
-### 4.1 Booking a Ride
-1. Browser loads the page; JS initializes a Leaflet map centered on the user's GPS location (Geolocation API), or a default city center as fallback.
-2. User clicks a point on the map to set the drop location.
-3. Frontend sends both coordinates directly to the public **OSRM** routing API, which returns the road path (GeoJSON), distance, and estimated duration.
-4. Frontend POSTs distance/duration to `/api/estimate-fare`.
-5. Backend applies the fare formula (₹15 base + ₹12/km) and returns fare + ETA as JSON.
-6. Frontend updates the fare card and enables "Confirm ride."
-
-### 4.2 Chat Translation
-1. User types a message and picks a target language.
-2. Frontend POSTs text + target language code to `/api/translate`.
-3. Backend builds a prompt instructing Gemini to detect the source language and translate into the target, then calls the Gemini API server-side (keeping the key private).
-4. Translated text returns as JSON and renders beneath the original message bubble.
-
-### 4.3 Simulated Trip Events
-Once a ride is confirmed, a vehicle marker is placed ~30% of the way along the route. A timer triggers a simulated route deviation a few seconds later (marker nudges off-route, warning banner shows); a manual "Simulate deviation" button can also trigger this on demand. Clicking SOS opens a modal explaining an emergency contact must be configured first — it does not call any backend route.
-
----
-
-## 5. Project Structure
-
-```
-rideease/
-├── app.py              # Flask backend (fare calc, translation, SOS stub)
-├── .env                # API keys (not committed)
-├── templates/
-│   └── index.html      # Main page
-└── static/
-    ├── style.css
-    └── script.js        # Map, routing, chat, and SOS logic
-```
-
----
-
-## 6. API Reference
-
-### `POST /api/estimate-fare`
-**Request body:**
-```json
-{ "distance_km": 4.2, "duration_min": 11 }
-```
-**Response:**
-```json
-{ "fare": 65, "eta_min": 11, "distance_km": 4.2, "payment_method": "Cash" }
-```
-Fare formula: `fare = round(15 + distance_km * 12)`
-
-### `POST /api/translate`
-**Request body:**
-```json
-{ "text": "Where are you?", "target_lang": "kn" }
-```
-**Response:**
-```json
-{ "translated": "ನೀವು ಎಲ್ಲಿದ್ದೀರಿ?" }
-```
-If `GEMINI_API_KEY` isn't set, the endpoint returns the original text with a `warning` field instead of failing.
-
-### `POST /api/sos`
-**Response:**
-```json
-{ "status": "not_configured", "message": "SOS is under development. It needs an emergency contact number set up first." }
-```
-
----
-
-## 7. Setup & Installation
-
-1. **Install dependencies:**
-   ```bash
-   pip install flask google-genai python-dotenv
-   ```
-2. **Configure the API key** — rename `.env.example` to `.env` and add:
-   ```
-   GEMINI_API_KEY=your_key_here
-   ```
-   Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) — no billing required.
-3. **Run the app:**
-   ```bash
-   python app.py
-   ```
-4. Open `http://127.0.0.1:5000` in your browser.
-
----
-
-## 8. Current Hosting & Deployment
-
-The project runs as a **local/single-instance deployment**, appropriate for a classroom demo:
-- One Flask development server process (`python app.py`), no worker pool, no process manager (gunicorn/uwsgi).
-- Plain HTTP on localhost; no HTTPS, reverse proxy, or CDN.
-- No scaling — assumes a small number of concurrent users.
-- Secrets read from a local `.env` file at startup; excluded from version control.
-- No persistence — refreshing the page or restarting the server clears all trip/chat state.
-
----
-
-## 9. Proposed Cloud Architecture (AWS)
-
-To move from demo to production, the design keeps the same logical components but adds authentication, a real database, caching, autoscaling compute, and observability.
-
-| Business Need | AWS Service | Purpose |
-|---|---|---|
-| Static frontend hosting | S3 + CloudFront | Serves HTML/CSS/JS globally with edge caching + HTTPS |
-| Backend API compute | ECS Fargate | Runs the containerized Flask app without managing servers |
-| Request distribution | Application Load Balancer | Distributes traffic across Fargate tasks, health checks |
-| Public API surface | API Gateway | Throttling, validation, stable contract for `/api` routes |
-| Event-driven functions | AWS Lambda | Bursty translation/SOS workloads scale independently |
-| User authentication | Amazon Cognito | Sign-up/sign-in, JWT issuance, MFA support |
-| Relational data | Amazon RDS (PostgreSQL) | User profiles, ride records, ride history |
-| High-write chat/GPS data | Amazon DynamoDB | Live chat messages, vehicle-position pings |
-| Hot-path caching | Amazon ElastiCache (Redis) | Active trip state, fare lookups, rate limiting |
-| Object storage | Amazon S3 | Trip receipts, logs, future driver documents |
-| Secrets management | AWS Secrets Manager | Stores/rotates the Gemini API key and DB credentials |
-| Monitoring | CloudWatch + X-Ray | Logs, metrics, alarms, distributed tracing |
-
-**Cloud choice rationale (AWS vs Azure vs GCP):** ECS Fargate + API Gateway + Lambda cleanly covers the containerized-API-plus-event-driven-function pattern RideEase needs (steady booking/fare traffic plus bursty translation/SOS calls). DynamoDB is a strong fit for the highest-write, least-relational data (chat messages, GPS pings). Azure (App Service/AKS, Azure SQL, Cosmos DB, Azure AD B2C) and GCP (Cloud Run, Firestore) are both viable alternatives.
-
----
-
-## 10. Scalability Plan: 1M and 5M Users
-
-| Area | At ~1,000,000 users | At ~5,000,000 users |
-|---|---|---|
-| **Application** | Move to cloud host; run multiple Flask copies behind a load balancer (Gunicorn/Nginx); containerize with Docker; auto-scale with traffic | Split into microservices (Booking, Routing, Chat/Translation, Fare); offload heavy tasks to background workers (Celery + Redis/RabbitMQ); multi-region deployment |
-| **Database** | Add managed PostgreSQL/MySQL with read replicas, indexes, and connection pooling | Partition/shard by region or user ID; separate DB per microservice; add NoSQL (MongoDB/DynamoDB) for chat & location data; automatic failover |
-| **Storage** | Move to cloud object storage (S3/GCS/Blob), separate from app servers | Multi-region replication, storage tiering (cold storage for old data), CDN for static assets |
-| **Network** | CDN for static files, HTTPS + HTTP/2, VPC for app/DB/cache | Multi-region servers, GeoDNS/global load balancing, dynamic bandwidth scaling |
-| **Traffic management** | API rate limiting, API Gateway, request queueing for spikes | Traffic prioritization, circuit breakers for flaky external APIs, real-time auto-scaling |
-| **Caching** | Redis for OSRM routes/fare calcs, cached common translations, browser/CDN caching | Distributed Redis cluster, edge caching, smart cache invalidation |
-| **Load balancing** | Load balancer (Nginx/ALB) with health checks and round-robin/least-connections | Multi-level load balancing (region, server, service); sticky sessions only where needed (e.g. live chat) |
-| **Security** | Real authentication (hashed passwords/OTP + JWT), enforced HTTPS, secrets manager, input validation | WAF, DDoS protection, role-based access control, regular security audits, SOS fully built with Twilio |
-| **Monitoring** | Dashboards (Grafana/Prometheus), alerting, business metrics | Distributed tracing (Jaeger/OpenTelemetry), centralized logging (ELK), real-user monitoring |
-| **Backup & recovery** | Automated daily DB backups, point-in-time recovery, tested restores | Multi-region backups, defined RPO/RTO, automatic regional failover |
-
-**Estimated peak load:** ~5,000–8,000 req/min at 1M users; ~25,000–40,000 req/min at 5M users.
-
-**What doesn't need to change:** Because the API tier becomes stateless (trip state lives in Redis/DynamoDB, not process memory) and the frontend is fully static/CDN-delivered, scaling at either milestone is a matter of adjusting autoscaling targets rather than re-architecting the app. The core product idea — real road routing, live translated chat, simple fare estimation — stays the same; only the infrastructure underneath grows.
-
-**Rough monthly cost shape (USD, ap-south-1):**
-
-| Stage | Rough total/month | Key drivers |
-|---|---|---|
-| Demo / low traffic | ~$40–70 | 1–2 small Fargate tasks; db.t3.micro + on-demand DynamoDB; small CDN/storage |
-| ~1M users | ~$900–1,800 | 5–20 autoscaled tasks; Multi-AZ RDS + 1 read replica; CDN/storage |
-| ~5M users | Higher, driven by | 50–150+ Fargate tasks at peak, read-replica fleet/sharding, multi-region deployment |
-
----
-
-## 11. Known Limitations
-
-- Fare formula is a simple flat rate, not tied to real-time demand or traffic.
-- SOS is UI-only; it does not place a real call or send an SMS yet.
-- No user accounts, login, or ride history — this is a single-session demo.
-- Driver responses in chat are simulated (preset sample messages), not from a real driver.
-
-## 12. Future Scope
-
-- Wire up SOS with a real emergency contact and Twilio-based calling/SMS.
-- Add user authentication and a ride history database.
-- Real-time driver GPS tracking instead of a simulated vehicle marker.
-- Execute the proposed AWS cloud migration (Section 9) as usage grows toward the 1M/5M user milestones (Section 10).
+| Member | Minimum evidence to maintain |
+|---|---|
+| Amritha | Firewall/network configuration or diagram, security-control documentation, failure/recovery tests, screenshots/commits |
+| Anuj | Schema/ER diagram, database scripts/queries, backend/API commits, transaction/algorithm implementation and tests |
+| Riya | Component 11 code, Gemini translation service/API, validation/error handling, Component 14 evidence and demo/test result |
+| Nayana | Authentication/encryption/authorization implementation, integration tests, scalability calculations, Component 14 evidence |
+| Arunima | Architecture/data-flow diagrams, frontend commits, map/booking/chat/SOS UI, Component 14 evidence and screenshots |
