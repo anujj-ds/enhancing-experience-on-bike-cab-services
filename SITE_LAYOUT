@@ -1,0 +1,26 @@
+rideease/
+├── app.py                  # Flask backend — fare calc, translation, SOS stub
+├── .env                    # Local Gemini API key (not committed)
+├── .env.example             # Template for .env (env.txt in this repo)
+├── requirements / setup     # flask, google-genai, python-dotenv
+│
+├── templates/
+│   └── index.html           # Single-page app shell (Jinja2 template)
+│
+├── static/
+│   ├── style.css            # All styling (layout, cards, modals, toast)
+│   └── script.js            # Map, routing, booking, chat, SOS logic
+│
+├── docs/
+│   ├── PROJECT_IMPLEMENTATION.md   # Full write-up: overview, stack, architecture, API reference
+│   ├── architecture.md             # Cloud/system architecture notes
+│   ├── Scalability_Analysis.txt    # 1M / 5M user scaling plan
+│   └── ExplanatoryPoster.png       # One-page visual summary of the app
+│
+├── slides/
+│   ├── RideEase_Implementation.pptx
+│   └── RideEase_Cloud_Architecture.pptx
+│
+├── README.md                # Quick start, features, tech stack, install steps
+├── LICENSE.md                # MIT License + third-party service terms
+└── SITE_LAYOUT.md            # This file
