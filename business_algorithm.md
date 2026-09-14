@@ -23,4 +23,23 @@ When a rider books a ride, RideEase needs to calculate a fair, predictable fare 
 ### Output
 - A single estimated fare amount (in ₹), displayed to the rider on the booking screen prior to confirming the trip.
 
+### Pseudocode
+distance_km = route.distance / 1000   // OSRM returns meters
+base_fare = 15
+rate_per_km = 12
+fare = base_fare + (rate_per_km * distance_km)
+fare = round(fare)
+RETURN fare
 
+
+### Where It Is Implemented in the Code
+- **Backend:** `app.py` — the Flask route that receives pickup/drop coordinates from the frontend, calls the OSRM API, extracts the distance, and applies the fare formula before returning the result as a JSON response.
+- **Frontend:** `static/script.js` — sends the selected pickup/drop coordinates to the backend (or directly queries OSRM), receives the route and fare, draws the route polyline on the Leaflet map, and displays the fare estimate in the UI.
+
+### Example Input
+- Pickup: `12.9716° N, 77.5946° E` (MG Road, Bengaluru)
+- Drop: `12.9352° N, 77.6146° E` (Koramangala, Bengaluru)
+- OSRM-calculated road route distance: `6.4 km`
+
+### Example Output
+Displayed to rider: **Estimated Fare: ₹92**
