@@ -193,6 +193,19 @@
       <span class="close-x" id="closeDeviation">&times;</span>
     </div>
     <button class="float-support-btn" id="floatSupportBtn">&#128172; Support</button>
+    <div class="cat-guide" id="catGuide">
+      <div class="cat-bubble hidden" id="catBubble">
+        <div class="cat-bubble-head">
+          <strong>Meowster</strong> <span>&middot; your ride buddy</span>
+          <span class="close-x" id="catBubbleClose">&times;</span>
+        </div>
+        <p class="cat-line" id="catLine"></p>
+        <div class="cat-spots" id="catSpots"></div>
+      </div>
+      <button class="cat-btn" id="catBtn" title="Famous places along your route">
+        <span class="cat-helmet">&#129686;</span><span class="cat-face">&#128049;</span>
+      </button>
+    </div>
     <button class="dev-btn hidden" id="devDeviationBtn">Simulate deviation</button>
   </section>
 
@@ -210,6 +223,23 @@
         </div>
       </div>
       <span class="close-x" id="supportCloseBtn">&times;</span>
+    </div>
+
+
+    <!-- Guided help desk: specific queries -> selective answers -> AI agent -->
+    <div class="helpdesk" id="helpdesk">
+      <p class="helpdesk-title" id="helpdeskTitle">What is your issue about?</p>
+      <div class="help-topics" id="helpTopics"></div>
+      <div class="help-queries hidden" id="helpQueries"></div>
+      <div class="help-answer hidden" id="helpAnswer">
+        <p class="help-answer-text" id="helpAnswerText"></p>
+        <div class="help-resolve">
+          <span>Did this solve your issue?</span>
+          <button class="help-yes" id="helpYesBtn">&#128077; Yes, solved</button>
+          <button class="help-no" id="helpNoBtn">&#129302; No, connect me to an agent</button>
+        </div>
+      </div>
+      <button class="ghost-chip help-back hidden" id="helpBackBtn">&#8592; All topics</button>
     </div>
 
     <div class="chat-log" id="supportLog">
