@@ -502,3 +502,129 @@ body { font-family: var(--font); background: var(--surface); color: var(--text);
   display: flex; align-items: center; justify-content: center;
   box-shadow: var(--shadow-md); border: 2px solid #fff;
 }
+
+/* ===== GUIDED HELP DESK (chat support) ===== */
+.helpdesk {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--accent-pale);
+}
+.helpdesk-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent-dark);
+  margin-bottom: 10px;
+}
+.help-topics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.help-topic {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: 600 12.5px var(--font);
+  color: var(--text);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+}
+.help-topic:hover { border-color: var(--accent); background: var(--accent-light); transform: translateY(-1px); }
+.help-topic-icon { font-size: 16px; }
+.help-queries { display: flex; flex-direction: column; gap: 6px; }
+.help-query {
+  text-align: left;
+  padding: 9px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  font: 500 12.5px var(--font);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.help-query:hover { color: var(--text); background: var(--accent-light); }
+.help-answer {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.help-answer-text { font-size: 13px; line-height: 1.6; color: var(--text); }
+.help-resolve {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  font-size: 12px; color: var(--text-3);
+}
+.help-yes, .help-no {
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+  font: 600 12px var(--font);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+.help-yes { background: var(--success-light); color: var(--success); border-color: var(--success); }
+.help-no  { background: var(--accent); color: #fff; }
+.help-yes:hover { background: var(--success); color: #fff; }
+.help-no:hover  { background: var(--accent-dark); }
+.help-back { align-self: flex-start; margin-top: 10px; }
+
+/* ===== MEOWSTER — CAT RIDE BUDDY ===== */
+.cat-guide { position: absolute; right: 18px; bottom: 84px; z-index: 620; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.cat-btn {
+  position: relative;
+  width: 58px; height: 58px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: #fff;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: var(--transition);
+  animation: catBob 2.6s ease-in-out infinite;
+}
+.cat-btn:hover { transform: scale(1.08); }
+.cat-btn.purring { background: var(--accent-light); }
+.cat-face { font-size: 26px; line-height: 1; }
+.cat-helmet { position: absolute; top: -6px; left: 50%; transform: translateX(-50%) rotate(-8deg); font-size: 17px; }
+@keyframes catBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.cat-bubble {
+  width: min(330px, 78vw);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 12px 14px;
+  order: -1;
+}
+.cat-bubble-head {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-3);
+  padding-bottom: 8px; margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.cat-bubble-head strong { color: var(--accent); font-size: 13px; }
+.cat-bubble-head .close-x { margin-left: auto; cursor: pointer; }
+.cat-line { font-size: 12.5px; line-height: 1.55; color: var(--text-2); margin-bottom: 10px; }
+.cat-spots { display: flex; flex-direction: column; gap: 7px; max-height: 260px; overflow-y: auto; }
+.cat-spot {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer; text-align: left;
+  transition: var(--transition);
+}
+.cat-spot:hover { background: var(--accent-light); border-color: var(--accent); }
+.cat-spot-icon { font-size: 18px; }
+.cat-spot-body { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.cat-spot-name { font: 600 12.5px var(--font); color: var(--text); }
+.cat-spot-line { font-size: 11.5px; color: var(--text-3); }
+.cat-spot-dist { font: 600 11px var(--font); color: var(--accent); text-align: right; line-height: 1.3; }
+.cat-spot-dist small { font-weight: 500; color: var(--text-3); }
+@media (max-width: 760px) { .cat-guide { bottom: 76px; right: 12px; } }
+.help-topics.hidden, .help-queries.hidden, .help-answer.hidden,
+.help-back.hidden, .cat-bubble.hidden { display: none !important; }
