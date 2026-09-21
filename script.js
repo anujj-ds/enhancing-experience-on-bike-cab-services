@@ -653,3 +653,265 @@ if (savedSos) {
 /* ---------- INIT ---------- */
 initMap();
 loadNearbyPlaces(DEFAULT_CENTER);
+
+/* =====================================================
+   FEATURE 1 — GUIDED CHAT SUPPORT (selective responses
+   + escalation to AI agent that apologises & acts)
+   ===================================================== */
+
+const HELP_TOPICS = [
+  {
+    id: 'payment', icon: '💳', label: 'Payment & Fare',
+    queries: [
+      { q: 'I was charged more than the estimate',
+        a: `Your fare is calculated as **₹${BASE_FARE} base + ₹${RATE_PER_KM}/km** on the actual road distance. If the pilot took a longer route, the extra distance is added.\n\nOpen **My Rides** to see the exact distance billed for the trip.` },
+      { q: 'I paid cash but the app still shows unpaid',
+        a: `Cash trips are marked paid by the pilot at drop-off. It can take up to **5 minutes** to sync.\n\nIf it is still pending after that, we clear it from our side — no second payment is ever needed.` },
+      { q: 'I want a refund for a cancelled ride',
+        a: `Cancellations before the pilot reaches your pickup are **completely free**. If a cancellation fee was applied, it is refunded to your RideEase wallet within **24 hours**.` },
+      { q: 'Which payment methods are supported?',
+        a: `Right now RideEase trips are **cash to the pilot** at the end of the ride. UPI and card payments are rolling out shortly — no wallet top-up is required.` },
+    ],
+  },
+  {
+    id: 'behaviour', icon: '🧍', label: 'Pilot Behaviour',
+    queries: [
+      { q: 'The pilot was rude to me',
+        a: `That is not the RideEase standard and we are sorry. Every complaint is attached to the pilot's safety record, and repeat reports mean **removal from the platform**.\n\nTell our agent what happened and we act on the same trip.` },
+      { q: 'The pilot asked for extra money',
+        a: `Pilots must **never** ask for more than the app fare. Anything extra is an overcharge and is refunded to you.` },
+      { q: 'The pilot rode rashly / did not give a helmet',
+        a: `A helmet for the rider is mandatory on every RideEase bike trip, and rash riding is a **zero-tolerance** violation. Reports here trigger a safety review of the pilot within 24 hours.` },
+      { q: 'The pilot cancelled after I waited',
+        a: `If a pilot cancels after arriving late, you are never charged and we re-dispatch the next nearest pilot at the **same fare**.` },
+    ],
+  },
+  {
+    id: 'ride', icon: '🛣️', label: 'Ride & Route',
+    queries: [
+      { q: 'Where is my pilot right now?',
+        a: `Your pilot's live position is the 🚴 marker on the map. If the pilot leaves the planned route, the **route deviation alert** appears automatically at the top of the map.` },
+      { q: 'The pilot took a wrong / longer route',
+        a: `We compare the actual path against the planned route. If the detour was not needed, the extra distance is **removed from your fare**.` },
+      { q: 'How do I share my Ride PIN?',
+        a: `Read out the 4-digit **Ride PIN** on your trip card to the pilot before starting. The trip cannot begin without it — never share it in advance.` },
+      { q: 'I left something in the vehicle',
+        a: `Lost items are traced through the trip record. Our agent contacts the pilot directly and arranges a return drop for you.` },
+    ],
+  },
+  {
+    id: 'safety', icon: '🆘', label: 'Safety & SOS',
+    queries: [
+      { q: 'I feel unsafe during this ride',
+        a: `Tap the red **SOS** button on your trip screen — your live location and trip details go to your emergency contact instantly. If you are in danger, call **112** first.` },
+      { q: 'How do I set my emergency contact?',
+        a: `Trip screen → **SOS** → enter a name and number → Save. That contact is alerted the moment SOS is triggered, on every future ride.` },
+      { q: 'What does the deviation alert mean?',
+        a: `It means your pilot has moved away from the planned route. If it was not a traffic diversion, report it here and we review the trip immediately.` },
+    ],
+  },
+  {
+    id: 'account', icon: '📱', label: 'Account & App',
+    queries: [
+      { q: 'How do I schedule a ride for later?',
+        a: `On the booking panel switch to **Schedule**, pick 15 min / 30 min / 1 hour or a custom time, then confirm. A pilot is dispatched to arrive on time.` },
+      { q: 'The AI features are not replying',
+        a: `Open **Profile → Gemini API key** and save a free key from aistudio.google.com. Without it the app still answers using built-in offline responses.` },
+      { q: 'How do I see my past trips?',
+        a: `Bottom bar → **My Rides** shows every trip with route, pilot, rating and fare.` },
+    ],
+  },
+];
+
+/* action the AI agent takes, per topic, when a query stays unsolved */
+const AGENT_ACTIONS = {
+  payment:   { label: 'Fare review + refund raised', detail: `the excess amount is being reviewed and any overcharge is refunded to your RideEase wallet within 24 hours` },
+  behaviour: { label: 'Pilot reported to Safety team', detail: `this pilot is flagged on your trip record, will not be matched with you again, and our Safety team reviews the conduct within 24 hours` },
+  ride:      { label: 'Trip route audited', detail: `your route is being audited against the planned path and any unnecessary distance is removed from the fare` },
+  safety:    { label: 'Priority safety escalation', detail: `your trip has been escalated to our on-call Safety team, who will call you on your registered number` },
+  account:   { label: 'Technical ticket created', detail: `our app team has your device details and will confirm the fix by notification` },
+};
+
+const helpdeskEl      = () => document.getElementById('helpdesk');
+let helpTopic = null, helpQuery = null;
+
+function renderHelpTopics() {
+  helpTopic = null; helpQuery = null;
+  document.getElementById('helpTopics').innerHTML = HELP_TOPICS.map(t => `
+    <button class="help-topic" data-topic="${t.id}">
+      <span class="help-topic-icon">${t.icon}</span>
+      <span>${t.label}</span>
+    </button>`).join('');
+  document.getElementById('helpTopics').classList.remove('hidden');
+  document.getElementById('helpQueries').classList.add('hidden');
+  document.getElementById('helpAnswer').classList.add('hidden');
+  document.getElementById('helpBackBtn').classList.add('hidden');
+  document.getElementById('helpdeskTitle').textContent = 'What is your issue about?';
+}
+
+function renderHelpQueries(topicId) {
+  helpTopic = HELP_TOPICS.find(t => t.id === topicId);
+  helpQuery = null;
+  document.getElementById('helpQueries').innerHTML = helpTopic.queries.map((q, i) => `
+    <button class="help-query" data-i="${i}">${q.q}</button>`).join('');
+  document.getElementById('helpTopics').classList.add('hidden');
+  document.getElementById('helpQueries').classList.remove('hidden');
+  document.getElementById('helpAnswer').classList.add('hidden');
+  document.getElementById('helpBackBtn').classList.remove('hidden');
+  document.getElementById('helpdeskTitle').textContent = `${helpTopic.icon} ${helpTopic.label} — choose your question`;
+}
+
+function showHelpAnswer(i) {
+  helpQuery = helpTopic.queries[i];
+  const box = document.getElementById('helpAnswer');
+  document.getElementById('helpAnswerText').innerHTML =
+    helpQuery.a.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+  document.getElementById('helpQueries').classList.add('hidden');
+  box.classList.remove('hidden');
+  document.getElementById('helpdeskTitle').textContent = `${helpTopic.icon} ${helpQuery.q}`;
+}
+
+function ticketId() { return `RE-T-${Math.floor(1000 + Math.random() * 9000)}`; }
+
+/* offline apology + action, used when no Gemini key is set */
+function escalationFallback(topic, query, tid) {
+  const act = AGENT_ACTIONS[topic.id];
+  return `I'm really sorry this happened — that is genuinely not the experience RideEase promises you, and I'm taking it from here personally.\n\n` +
+    `**What I've done for you just now**\n` +
+    `• ${act.label} on ticket **${tid}**${state.tripId ? ` for trip **${state.tripId}**` : ''}\n` +
+    `• I've noted your issue as: *${query.q}*\n` +
+    `• Next: ${act.detail}.\n\n` +
+    `You don't need to follow up — I'll keep you posted on this ticket. **Anything else I can fix for you right now?**`;
+}
+
+async function escalateToAgent() {
+  const topic = helpTopic, query = helpQuery;
+  const tid = ticketId();
+  const act = AGENT_ACTIONS[topic.id];
+
+  document.getElementById('helpAnswer').classList.add('hidden');
+  document.getElementById('helpdeskTitle').textContent = '🤖 Connecting you to Aria, our AI support agent…';
+  addSupportBubble(`I need help with: ${query.q} (${topic.label})`, 'user');
+  showTypingIndicator();
+
+  const ask = `The rider picked the help topic "${topic.label}" and the issue "${query.q}". The self-serve answer did NOT solve it, so you are now the escalated live agent.
+Reply in this order: (1) a sincere, specific apology, (2) a short "What I've done for you just now" list containing the action "${act.label}" with ticket ${tid}${state.tripId ? ` on trip ${state.tripId}` : ''}, (3) what happens next: ${act.detail}, (4) one offer of further help. Never ask the rider to repeat themselves or contact anyone else. Keep it under 120 words and use **bold** for key facts.`;
+
+  let reply;
+  try {
+    reply = GEMINI_API_KEY ? await callGeminiSupport(ask) : escalationFallback(topic, query, tid);
+  } catch { reply = escalationFallback(topic, query, tid); }
+  if (!reply || /^Hi! I'm \*\*Aria\*\*/.test(reply)) reply = escalationFallback(topic, query, tid);
+
+  removeTypingIndicator();
+  addSupportBubble(reply, 'model');
+  supportHistory.push({ role: 'user', text: ask });
+  supportHistory.push({ role: 'model', text: reply });
+  showToast(`🤖 Agent took action · ticket ${tid}`);
+  document.getElementById('helpdeskTitle').textContent = `✅ ${act.label} · ticket ${tid}`;
+  document.getElementById('helpBackBtn').classList.remove('hidden');
+}
+
+document.getElementById('helpTopics').addEventListener('click', e => {
+  const b = e.target.closest('.help-topic'); if (b) renderHelpQueries(b.dataset.topic);
+});
+document.getElementById('helpQueries').addEventListener('click', e => {
+  const b = e.target.closest('.help-query'); if (b) showHelpAnswer(Number(b.dataset.i));
+});
+document.getElementById('helpBackBtn').addEventListener('click', renderHelpTopics);
+document.getElementById('helpYesBtn').addEventListener('click', () => {
+  showToast('😊 Glad that helped!');
+  addSupportBubble(`✅ Resolved on its own: *${helpQuery.q}*`, 'model');
+  renderHelpTopics();
+});
+document.getElementById('helpNoBtn').addEventListener('click', escalateToAgent);
+renderHelpTopics();
+
+/* =====================================================
+   FEATURE 2 — MEOWSTER, the cat ride-buddy who suggests
+   famous places along your route
+   ===================================================== */
+
+const CAT_SPOTS = [
+  { name:'Lalbagh Botanical Garden', icon:'🌺', coords:[12.9507,77.5848], line:'Glass House, lake, and the best morning air in the city.' },
+  { name:'Bugle Rock Park, Basavanagudi', icon:'🪨', coords:[12.9420,77.5730], line:'A 3-billion-year-old rock and the famous Bull Temple next door.' },
+  { name:'Bannerghatta Zoo & Safari', icon:'🐯', coords:[12.7999,77.5772], line:'Big cats! My distant, much scarier cousins.' },
+  { name:'Meenakshi Temple, Hulimavu', icon:'🛕', coords:[12.8775,77.5947], line:'Huge, calm, and right off Bannerghatta Road.' },
+  { name:'Royal Meenakshi Mall', icon:'🛍️', coords:[12.8844,77.5966], line:'Food court stop before the traffic picks up.' },
+  { name:'Jayanagar 4th Block Market', icon:'🥥', coords:[12.9299,77.5827], line:'Flowers, filter coffee and crisp masala dosa.' },
+  { name:'Forum Mall, Koramangala', icon:'🎬', coords:[12.9345,77.6115], line:'Movies and shopping at the end of your ride.' },
+  { name:'Sony World Signal cafes, Koramangala', icon:'☕', coords:[12.9352,77.6245], line:'Cafe-hopping heaven on 5th Block.' },
+  { name:'Cubbon Park', icon:'🌳', coords:[12.9763,77.5929], line:'300 acres of shade in the middle of everything.' },
+  { name:'Lalbagh West Gate street food', icon:'🌽', coords:[12.9470,77.5790], line:'Evening corn, chaat and sugarcane juice.' },
+  { name:'Church Street', icon:'📚', coords:[12.9748,77.6053], line:'Bookshops, bars and live music in one walk.' },
+  { name:'Iskcon Temple, Rajajinagar', icon:'🕉️', coords:[12.9915,77.5510], line:'Golden gopuram and the famous prasadam.' },
+  { name:'Phoenix Marketcity, Whitefield', icon:'🎡', coords:[12.9959,77.6964], line:'Mega mall with a multiplex on top.' },
+  { name:'Ulsoor Lake', icon:'🚣', coords:[12.9822,77.6206], line:'Boat rides minutes from MG Road.' },
+];
+
+function distToRouteKm(spot) {
+  if (state.routeLatLngs?.length) {
+    const step = Math.max(1, Math.floor(state.routeLatLngs.length / 120));
+    let best = Infinity, at = 0;
+    for (let i = 0; i < state.routeLatLngs.length; i += step) {
+      const d = haversineKm(state.routeLatLngs[i], spot.coords);
+      if (d < best) { best = d; at = i / state.routeLatLngs.length; }
+    }
+    return { km: Math.round(best * 10) / 10, at };
+  }
+  const from = state.pickup || DEFAULT_CENTER;
+  return { km: Math.round(haversineKm(from, spot.coords) * 10) / 10, at: 0 };
+}
+
+function catSuggestions() {
+  return CAT_SPOTS.map(s => ({ ...s, ...distToRouteKm(s) }))
+    .filter(s => s.km <= 3.5)
+    .sort((a, b) => a.at - b.at || a.km - b.km)
+    .slice(0, 4);
+}
+
+function catGreeting(n) {
+  if (!state.pickup || !state.drop)
+    return `Meow! Set your pickup and drop first — then I'll sniff out the famous spots on the way. 🐾`;
+  if (!n)
+    return `Hmm, nothing famous right along this route, but tap me again after you pick a different drop! 🐾`;
+  return `Purr-fect route! Here are <strong>${n} famous stops</strong> along the way — tap one to make it your drop.`;
+}
+
+function renderCatSpots() {
+  const spots = catSuggestions();
+  document.getElementById('catLine').innerHTML = catGreeting(spots.length);
+  document.getElementById('catSpots').innerHTML = spots.map(s => `
+    <button class="cat-spot" data-lat="${s.coords[0]}" data-lng="${s.coords[1]}" data-name="${s.name}">
+      <span class="cat-spot-icon">${s.icon}</span>
+      <span class="cat-spot-body">
+        <span class="cat-spot-name">${s.name}</span>
+        <span class="cat-spot-line">${s.line}</span>
+      </span>
+      <span class="cat-spot-dist">${s.km} km<br><small>off route</small></span>
+    </button>`).join('');
+}
+
+document.getElementById('catBtn').addEventListener('click', () => {
+  const bubble = document.getElementById('catBubble');
+  const opening = bubble.classList.contains('hidden');
+  if (opening) renderCatSpots();
+  bubble.classList.toggle('hidden');
+  document.getElementById('catBtn').classList.toggle('purring', opening);
+});
+document.getElementById('catBubbleClose').addEventListener('click', () => {
+  document.getElementById('catBubble').classList.add('hidden');
+  document.getElementById('catBtn').classList.remove('purring');
+});
+document.getElementById('catSpots').addEventListener('click', e => {
+  const b = e.target.closest('.cat-spot'); if (!b) return;
+  const lat = parseFloat(b.dataset.lat), lng = parseFloat(b.dataset.lng);
+  if (state.mode === 'booking') {
+    setDrop([lat, lng]);
+    document.getElementById('dropInput').value = b.dataset.name;
+    showToast(`🐾 Meowster set your drop to ${b.dataset.name}`);
+  } else {
+    state.map.setView([lat, lng], 15);
+    showToast(`🐾 ${b.dataset.name} — saving it for your next ride!`);
+  }
+});
