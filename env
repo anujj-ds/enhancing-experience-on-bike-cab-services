@@ -1,6 +1,0 @@
-# Rename this file to ".env" (remove .example) after pasting your key below.
-# Get a free Gemini key at: https://aistudio.google.com/apikey
-# No billing/card needed for this one.
-
-GEMINI_API_KEY=
-

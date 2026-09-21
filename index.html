@@ -1,158 +1,271 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RideEase</title>
+<title>RideEase — Smarter Bike Rides</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- ====== TOP NAVIGATION ====== -->
 <header class="topnav">
   <div class="brand">
-    <span class="icon" id="menuIcon" title="Menu">&#9776;</span>
+    <span class="menu-icon" id="menuIcon">&#9776;</span>
+    <span class="brand-logo">&#127946;</span>
     <span class="brand-name">RideEase</span>
+    <span class="brand-badge">BETA</span>
   </div>
   <nav class="nav-links">
-    <span class="nav-item" id="navHome">Home</span>
+    <span class="nav-item active" id="navHome">Home</span>
     <span class="nav-item" id="navRides">My Rides</span>
-    <span class="nav-item" id="navSupport">Support</span>
+    <span class="nav-item" id="navSupport">&#128172; Support</span>
   </nav>
-  <div class="profile-icon" id="profileIcon" title="Profile">&#128100;</div>
+  <div class="profile-area">
+    <div class="notif-dot" id="notifDot"></div>
+    <div class="profile-icon" id="profileIcon" title="Profile">&#128100;</div>
+  </div>
 </header>
 
+<!-- ====== MAIN DASHBOARD ====== -->
 <main class="dashboard">
 
-  <!-- ============ LEFT PANEL ============ -->
+  <!-- ====== LEFT PANEL ====== -->
   <aside class="side-panel">
 
+    <!-- Booking Card -->
     <div class="panel-card" id="bookingCard">
-      <h2 class="panel-title">Book a ride</h2>
+      <h2 class="panel-title">Book a Ride</h2>
 
+      <!-- Location Inputs -->
       <div class="location-card">
         <div class="loc-row">
-          <span class="dot"></span>
+          <span class="loc-dot green"></span>
           <input type="text" id="pickupInput" placeholder="Pickup location" readonly>
-          <span class="icon small" id="gpsBtn" title="Use current location">&#8982;</span>
+          <button class="gps-btn" id="gpsBtn" title="Use GPS">&#8982;</button>
         </div>
+        <div class="loc-divider"></div>
         <div class="loc-row">
-          <span class="pin">&#128205;</span>
-          <input type="text" id="dropInput" placeholder="Click on the map to set drop" readonly>
+          <span class="loc-dot red"></span>
+          <input type="text" id="dropInput" placeholder="Tap map or choose a place" readonly>
         </div>
       </div>
 
-      <div class="fare-card" id="fareCard" style="display:none;">
-        <div class="vehicle-info">
-          <p class="vehicle-type">Bike</p>
-          <p class="eta" id="etaText">-- min away</p>
-        </div>
-        <span class="fare-amount" id="fareAmount">₹--</span>
+      <!-- Time Selector -->
+      <div class="time-selector" id="timeSelector">
+        <button class="time-tab active" id="tabNow" data-type="now">&#9654; Ride Now</button>
+        <button class="time-tab" id="tabSchedule" data-type="schedule">&#128337; Schedule</button>
+      </div>
+      <div class="schedule-row hidden" id="scheduleRow">
+        <select id="scheduleSelect">
+          <option value="15">In 15 minutes</option>
+          <option value="30">In 30 minutes</option>
+          <option value="60">In 1 hour</option>
+          <option value="custom">Custom time</option>
+        </select>
+        <input type="time" id="customTime" class="hidden" id="customTimeInput">
       </div>
 
+      <!-- Fare Card -->
+      <div class="fare-card hidden" id="fareCard">
+        <div class="fare-left">
+          <span class="vehicle-icon-lg">&#127946;</span>
+          <div>
+            <p class="vehicle-label">Bike</p>
+            <p class="eta-label" id="etaText">-- min</p>
+          </div>
+        </div>
+        <div class="fare-right">
+          <span class="fare-amount" id="fareAmount">&#x20B9;--</span>
+          <span class="fare-sub">Cash</span>
+        </div>
+      </div>
+
+      <!-- Nearby Places -->
+      <div class="nearby-section" id="nearbySection">
+        <div class="nearby-header">
+          <span class="nearby-title">&#127775; Explore Nearby</span>
+        </div>
+        <div class="category-chips" id="categoryChips">
+          <button class="chip active" data-cat="all">All</button>
+          <button class="chip" data-cat="cafe">&#9749; Cafes</button>
+          <button class="chip" data-cat="metro">&#128647; Metro</button>
+          <button class="chip" data-cat="tech">&#127970; Tech Parks</button>
+          <button class="chip" data-cat="mall">&#128717; Malls</button>
+          <button class="chip" data-cat="hangout">&#127795; Hangouts</button>
+        </div>
+        <div class="places-list" id="placesList"></div>
+      </div>
+
+      <!-- Payment Row -->
       <div class="payment-row">
-        <span class="icon small">&#128181;</span>
-        <span>Payment method: <strong>Cash</strong></span>
+        <span>&#128181;</span>
+        <span>Cash payment &middot; No card required</span>
       </div>
 
       <button class="confirm-btn" id="confirmBtn" disabled>Set pickup &amp; drop to continue</button>
       <p class="status-msg" id="homeStatus"></p>
     </div>
 
+    <!-- Matching Card -->
+    <div class="panel-card hidden" id="matchingCard">
+      <h2 class="panel-title">Finding your pilot&hellip;</h2>
+      <div class="radar-wrap">
+        <div class="radar-ring ring1"></div>
+        <div class="radar-ring ring2"></div>
+        <div class="radar-ring ring3"></div>
+        <div class="radar-center">&#127946;</div>
+      </div>
+      <p class="matching-msg">Scanning nearby verified pilots for your ride</p>
+    </div>
+
+    <!-- Trip Card -->
     <div class="panel-card hidden" id="tripCard">
-      <h2 class="panel-title">Your ride</h2>
+      <div class="trip-header">
+        <h2 class="panel-title">Your Ride</h2>
+        <span class="trip-status-pill" id="tripStatusPill">Confirmed</span>
+      </div>
 
-      <div class="driver-info">
-        <div class="driver-avatar">R</div>
-        <div>
-          <p class="driver-name">Ravi Kumar</p>
-          <p class="driver-sub">Bike · KA 05 AB 1234</p>
+      <!-- Driver Profile -->
+      <div class="driver-card" id="driverCard">
+        <div class="driver-avatar" id="driverAvatar">R</div>
+        <div class="driver-info">
+          <p class="driver-name" id="driverName">Ravi Kumar</p>
+          <p class="driver-sub" id="driverSub">&#11088; 4.9 &middot; 1,420 rides</p>
+          <p class="driver-vehicle" id="driverVehicle">Honda Activa 6G &middot; KA 05 AB 1234</p>
+        </div>
+        <div class="driver-badge" id="driverBadge">Top Pilot</div>
+      </div>
+
+      <!-- OTP + Schedule -->
+      <div class="otp-row" id="otpRow">
+        <div class="otp-box">
+          <span class="otp-label">Ride PIN</span>
+          <span class="otp-code" id="otpCode">----</span>
+        </div>
+        <div class="schedule-box" id="scheduleBox">
+          <span class="sched-label">Pickup</span>
+          <span class="sched-val" id="schedVal">Arriving ~4 mins</span>
         </div>
       </div>
 
-      <div class="fare-card">
-        <div class="vehicle-info">
-          <p class="vehicle-type">Estimated fare</p>
-          <p class="eta" id="trackingEta">-- min away</p>
+      <!-- Fare -->
+      <div class="fare-card" id="tripFareCard">
+        <div class="fare-left">
+          <span class="vehicle-icon-lg">&#127946;</span>
+          <div>
+            <p class="vehicle-label">Estimated Fare</p>
+            <p class="eta-label" id="trackingEta">-- min</p>
+          </div>
         </div>
-        <span class="fare-amount" id="trackingFare">₹--</span>
+        <div class="fare-right">
+          <span class="fare-amount" id="trackingFare">&#x20B9;--</span>
+          <span class="fare-sub">Cash</span>
+        </div>
       </div>
 
-      <div class="payment-row">
-        <span class="icon small">&#128181;</span>
-        <span>Payment method: <strong>Cash</strong></span>
-      </div>
-
+      <!-- Action Buttons -->
       <div class="action-row">
-        <button class="secondary-btn" id="chatOpenBtn">
-          <span>&#128172;</span> Chat · auto-translates
+        <button class="action-btn chat" id="chatOpenBtn">
+          &#128172; Chat &amp; Translate
         </button>
-        <button class="sos-btn" id="sosOpenBtn">SOS</button>
+        <button class="action-btn sos" id="sosOpenBtn">
+          &#128168; SOS
+        </button>
       </div>
 
-      <button class="ghost-btn wide" id="backFromTracking">&#8592; Back to booking</button>
+      <button class="ghost-btn" id="backFromTracking">&#8592; Back to booking</button>
     </div>
 
   </aside>
 
-  <!-- ============ MAP PANEL ============ -->
+  <!-- ====== MAP ====== -->
   <section class="map-panel">
     <div id="map"></div>
     <p class="map-hint" id="mapHint">Click anywhere on the map to set your drop location</p>
-
     <div class="deviation-banner hidden" id="deviationBanner">
-      <span class="warn-icon">&#9888;</span>
-      <span>Driver has taken a different route than planned</span>
+      <span>&#9888;</span>
+      <span>Driver has taken a different route!</span>
       <span class="close-x" id="closeDeviation">&times;</span>
     </div>
-
-    <button class="dev-btn hidden" id="devDeviationBtn" title="Simulate route deviation">Simulate deviation</button>
+    <button class="float-support-btn" id="floatSupportBtn">&#128172; Support</button>
+    <button class="dev-btn hidden" id="devDeviationBtn">Simulate deviation</button>
   </section>
 
 </main>
 
-<!-- ============ SOS MODAL ============ -->
-<div class="modal-overlay hidden" id="sosModal">
-  <div class="modal-card">
+<!-- ====== CHAT SUPPORT MODAL ====== -->
+<div class="modal-overlay hidden" id="supportModal">
+  <div class="modal-card support-modal">
     <div class="modal-header">
-      <span class="modal-title">Emergency SOS</span>
-      <span class="close-x" id="sosCloseBtn">&times;</span>
+      <div class="support-agent-info">
+        <div class="agent-avatar">&#129302;</div>
+        <div>
+          <p class="agent-name">Aria &mdash; AI Support</p>
+          <p class="agent-status"><span class="online-dot"></span> Online &middot; responds instantly</p>
+        </div>
+      </div>
+      <span class="close-x" id="supportCloseBtn">&times;</span>
     </div>
-    <p class="modal-text">
-      This feature is under development — it needs an emergency contact number set up first.
-      Once added, SOS will call them directly and share your live location.
-    </p>
-    <div class="disabled-input-row">
-      <input type="tel" placeholder="Emergency contact number" disabled>
-      <button class="confirm-btn" disabled>Enable SOS (under development)</button>
+
+    <div class="chat-log" id="supportLog">
+      <div class="support-welcome">
+        <div class="bubble received">
+          <p class="main">Hi! I'm <strong>Aria</strong>, your RideEase AI assistant. I can help with your ride, fare details, scheduling, safety, and nearby places. What can I help you with?</p>
+          <span class="bubble-time">Just now</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-chips" id="supportChips">
+      <button class="quick-chip" data-q="What is the fare calculation formula?">&#128181; Fare breakdown</button>
+      <button class="quick-chip" data-q="Where is my driver right now?">&#128205; Driver location</button>
+      <button class="quick-chip" data-q="How do I cancel my ride?">&#10060; Cancel ride</button>
+      <button class="quick-chip" data-q="What are the safety features?">&#128168; Safety & SOS</button>
+      <button class="quick-chip" data-q="Recommend me nearby popular places">&#127775; Nearby spots</button>
+    </div>
+
+    <div class="chat-input-row">
+      <input type="text" id="supportInput" placeholder="Ask anything about your ride...">
+      <button class="send-btn" id="sendSupportBtn">&#10148;</button>
     </div>
   </div>
 </div>
 
-<!-- ============ CHAT MODAL ============ -->
+<!-- ====== DRIVER CHAT MODAL ====== -->
 <div class="modal-overlay hidden" id="chatModal">
   <div class="modal-card wide">
     <div class="modal-header">
-      <span class="modal-title">Chat with Ravi Kumar</span>
-      <select id="langSelect">
-        <option value="kn">Kannada</option>
-        <option value="hi">Hindi</option>
-        <option value="ta">Tamil</option>
-        <option value="te">Telugu</option>
-        <option value="en">English</option>
-      </select>
-      <span class="close-x" id="chatCloseBtn">&times;</span>
+      <div class="support-agent-info">
+        <div class="agent-avatar" id="chatDriverAvatar">R</div>
+        <div>
+          <p class="agent-name" id="chatDriverName">Chat with Ravi Kumar</p>
+          <p class="agent-status">&#129302; Auto-translates both sides via Gemini</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <select id="langSelect" class="lang-select">
+          <option value="kn">Kannada</option>
+          <option value="hi">Hindi</option>
+          <option value="ta">Tamil</option>
+          <option value="te">Telugu</option>
+          <option value="en">English</option>
+        </select>
+        <span class="close-x" id="chatCloseBtn">&times;</span>
+      </div>
     </div>
-
-    <div class="translate-note">
-      <span>&#129302;</span>
-      <span>Powered by Gemini — auto-detects your language and translates both sides</span>
+    <div class="chat-log" id="chatLog">
+      <div class="bubble received">
+        <p class="main">&#128075; Namaskara! I'm your pilot. How can I help?</p>
+        <span class="bubble-time">Now</span>
+      </div>
     </div>
-
-    <div class="chat-log" id="chatLog"></div>
-
     <div class="chat-input-row">
-      <button class="ghost-btn" id="simulateReplyBtn">Simulate driver reply</button>
+      <button class="ghost-chip" id="simulateReplyBtn">&#127919; Simulate driver reply</button>
     </div>
     <div class="chat-input-row">
       <input type="text" id="chatInput" placeholder="Type in any language...">
@@ -161,9 +274,95 @@
   </div>
 </div>
 
+<!-- ====== SOS MODAL ====== -->
+<div class="modal-overlay hidden" id="sosModal">
+  <div class="modal-card sos-card">
+    <div class="modal-header">
+      <span class="modal-title sos-title">&#128168; Emergency SOS</span>
+      <span class="close-x" id="sosCloseBtn">&times;</span>
+    </div>
+    <div class="sos-body">
+      <div class="sos-icon-big">&#9888;</div>
+      <p class="sos-desc">Set your emergency contact. If triggered, they'll receive your live location and an alert instantly.</p>
+      <div class="sos-form">
+        <input type="text" id="sosName" placeholder="Contact name (e.g. Mom)">
+        <input type="tel" id="sosPhone" placeholder="Phone number (+91...)">
+        <button class="confirm-btn sos-save-btn" id="sosSaveBtn">&#10003; Save Emergency Contact</button>
+        <button class="sos-trigger-btn" id="sosTriggerBtn">&#128168; TRIGGER SOS ALERT</button>
+      </div>
+      <p class="sos-status" id="sosStatus"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MY RIDES MODAL ====== -->
+<div class="modal-overlay hidden" id="ridesModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title">&#128203; My Rides</span>
+      <span class="close-x" id="ridesCloseBtn">&times;</span>
+    </div>
+    <div class="rides-list">
+      <div class="ride-entry">
+        <div class="ride-left">
+          <span class="ride-dot done"></span>
+          <div>
+            <p class="ride-route">Indiranagar &#8594; Koramangala</p>
+            <p class="ride-sub">Today 9:15 AM &middot; Ravi Kumar &middot; &#11088; 4.9</p>
+          </div>
+        </div>
+        <span class="ride-fare">&#x20B9;68</span>
+      </div>
+      <div class="ride-entry">
+        <div class="ride-left">
+          <span class="ride-dot done"></span>
+          <div>
+            <p class="ride-route">MG Road &#8594; Whitefield</p>
+            <p class="ride-sub">Yesterday 7:30 PM &middot; Suresh Gowda &middot; &#11088; 4.85</p>
+          </div>
+        </div>
+        <span class="ride-fare">&#x20B9;143</span>
+      </div>
+      <div class="ride-entry">
+        <div class="ride-left">
+          <span class="ride-dot done"></span>
+          <div>
+            <p class="ride-route">Jayanagar &#8594; Cubbon Park</p>
+            <p class="ride-sub">Sep 18 &middot; Manjunath K. &middot; &#11088; 4.88</p>
+          </div>
+        </div>
+        <span class="ride-fare">&#x20B9;51</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== PROFILE MODAL ====== -->
+<div class="modal-overlay hidden" id="profileModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title">&#128100; Profile & Settings</span>
+      <span class="close-x" id="profileCloseBtn">&times;</span>
+    </div>
+    <div class="profile-body">
+      <div class="profile-avatar-big">A</div>
+      <p class="profile-name">Anuj Bhargava</p>
+      <p class="profile-sub">Rider &middot; 12 trips completed</p>
+      <div class="profile-api-section">
+        <label class="api-label">&#128273; Gemini API Key (for AI features)</label>
+        <div class="api-input-row">
+          <input type="password" id="apiKeyInput" placeholder="Enter your Gemini API key..." >
+          <button class="ghost-chip" id="saveApiKey">Save</button>
+        </div>
+        <p class="api-hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast hidden" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="{{ url_for('static', filename='script.js') }}"></script>
+<script src="script.js"></script>
 </body>
 </html>

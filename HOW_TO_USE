@@ -1,0 +1,120 @@
+import os
+import urllib.request
+import json
+import base64
+
+REPO_OWNER = 'your-github-username'
+REPO_NAME = 'RideEase'
+FILE_PATH = 'HOW_TO_USE.md'
+COMMIT_MESSAGE = 'Add RideEase how-to-use guide'
+
+# Set this as an environment variable before running — never hardcode a token here.
+# e.g. in a terminal:  export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+
+guide_content = """# How to Use RideEase
+
+This guide walks through actually using the app once it's running — booking a ride, tracking it, chatting with the driver, and trying the safety features. For installation, see [README.md](./README.md).
+
+## Before you start
+
+- The app must be running locally: `python app.py`, then open `http://127.0.0.1:5000` in your browser.
+- Allow location access when your browser asks for it — RideEase uses your GPS position as the default pickup point.
+- Chat translation works without any setup (it just echoes the original text with a warning) but only translates for real if you've added a `GEMINI_API_KEY` to `.env`.
+
+## 1. Set your pickup location
+
+On the booking screen, tap the **⌖ icon** next to the pickup field. Your browser will ask for location permission — allow it, and RideEase centers the map on your current position and fills in the pickup field automatically.
+
+> If you decline location access, the pickup field stays empty and you'll see a status message asking you to set it manually. There's currently no manual pickup-search box in this build — the GPS button is the only way to set pickup.
+
+## 2. Set your drop location
+
+Click anywhere on the map to drop a pin. RideEase reverse-geocodes the point into a readable address and fills in the drop field. As soon as both pickup and drop are set, the app automatically calls OSRM to draw the real road route between them.
+
+## 3. Review your fare
+
+Once the route is drawn, a fare card appears showing the vehicle type, estimated time away, and the fare (₹15 base + ₹12/km, based on the real route distance — not a straight line). The **Confirm ride** button enables once this fare is shown.
+
+## 4. Confirm the ride
+
+Tap **Confirm ride**. The booking panel switches to a trip-tracking view showing your (simulated) driver's name, vehicle number, and the same fare. A vehicle marker appears on the map, about 30% of the way along your route.
+
+## 5. Chat with your driver
+
+Tap **Chat · auto-translates** to open the chat window.
+
+- Pick your driver's language from the dropdown (defaults to Kannada).
+- Type a message in English (or any language) and send it — it appears in your bubble along with a translated line underneath.
+- To see the other side of the conversation without a real driver, tap **Simulate driver reply** — this sends a preset phrase in the selected language and translates it back to English.
+
+If no `GEMINI_API_KEY` is set, translated text will just show the original message with a small toast warning that translation isn't configured.
+
+## 6. Route deviation alert
+
+About 9 seconds after confirming a ride, RideEase automatically nudges the vehicle marker off the planned route and shows a warning banner: *"Driver has taken a different route than planned."* Dismiss it with the **×**.
+
+> If you're testing on `localhost`, a **Simulate deviation** button also appears on the map so you can trigger this on demand instead of waiting.
+
+## 7. SOS button
+
+The SOS button on the trip screen is intentionally inactive in this build. Tapping it opens a modal explaining that it needs an emergency-contact setup flow first — this is a known limitation, not a bug (see [README.md](./README.md#known-limitations)).
+
+## 8. End the ride / start over
+
+Tap **← Back to booking** to reset the session — this clears the map, pickup/drop fields, fare, and any active chat or deviation alert, so you can book a fresh ride.
+
+## Notes for reviewers / testers
+
+- **Simulate driver reply** and **Simulate deviation** exist purely because there's no real driver in this demo — they're not hidden debug tools, they're part of the intended demo flow.
+- Payment is cash-only; there's no UPI/card flow to test.
+- Nothing persists between page reloads — refreshing clears the whole session (see the [architecture doc](./architecture.md) for why: the backend is stateless by design in this build).
+
+## Troubleshooting
+
+| Problem | Likely cause |
+|---|---|
+| "Couldn't fetch a route right now" | The public OSRM demo server may be rate-limiting or briefly down — wait a moment and try again. |
+| Pickup field won't fill in | Location permission was denied, or your browser blocked geolocation on a non-HTTPS origin. |
+| Chat shows original text, not translated | `GEMINI_API_KEY` isn't set in `.env`, or the key is invalid. |
+| Map is blank | Check your internet connection — map tiles load from OpenStreetMap over the network. |
+"""
+
+encoded_content = base64.b64encode(guide_content.encode('utf-8')).decode('utf-8')
+url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
+headers = {
+    "Authorization": f"Bearer {GITHUB_TOKEN}",
+    "Accept": "application/vnd.github.v3+json",
+    "User-Agent": "Python-urllib"
+}
+
+sha = None
+try:
+    req_check = urllib.request.Request(url, headers=headers, method='GET')
+    with urllib.request.urlopen(req_check) as response:
+        if response.status == 200:
+            resp_data = json.loads(response.read().decode('utf-8'))
+            sha = resp_data.get('sha')
+except urllib.error.HTTPError as e:
+    if e.code != 404:  # 404 just means file doesn't exist yet, which is fine
+        print(f"Error checking file status: {e.code}")
+
+data = {
+    "message": COMMIT_MESSAGE,
+    "content": encoded_content
+}
+if sha:
+    data["sha"] = sha
+
+json_data = json.dumps(data).encode('utf-8')
+
+try:
+    req_put = urllib.request.Request(url, data=json_data, headers=headers, method='PUT')
+    with urllib.request.urlopen(req_put) as response:
+        if response.status in [200, 201]:
+            print(f"Success! '{FILE_PATH}' is now live on GitHub with a readable preview.")
+except urllib.error.HTTPError as e:
+    print(f"HTTP Error {e.code}:")
+    print(e.read().decode('utf-8'))
+except Exception as e:
+    print(f"Error: {e}")

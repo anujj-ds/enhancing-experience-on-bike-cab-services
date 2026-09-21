@@ -1,0 +1,42 @@
+# ---- Secrets ----
+.env
+*.env
+!.env.example
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ---- Flask ----
+instance/
+.webassets-cache
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Editor / IDE ----
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---- Logs ----
+*.log
+
+# ---- Misc build/test artifacts ----
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
