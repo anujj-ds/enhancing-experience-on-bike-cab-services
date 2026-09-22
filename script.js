@@ -12,7 +12,7 @@
 // The app uses intelligent offline fallbacks if no key is set.
 const DEFAULT_GEMINI_KEY = '';
 let GEMINI_API_KEY = localStorage.getItem('rideease_gemini_key') || DEFAULT_GEMINI_KEY;
-const GEMINI_MODEL = 'gemini-3.6-flash';
+const GEMINI_MODEL = 'gemini-3.5-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=`;
 
 const OSRM_URL = 'https://router.project-osrm.org/route/v1/driving';
