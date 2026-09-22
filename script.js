@@ -129,7 +129,8 @@ function setDrop(latlng) {
   }
   document.getElementById('dropInput').value =
     `Selected (${latlng[0].toFixed(4)}, ${latlng[1].toFixed(4)})`;
-  requestRoute();
+   loadDestinationPlaces(latlng);
+   requestRoute();
 }
 
 /* ---------- OSRM ROUTING ---------- */
@@ -235,6 +236,42 @@ document.getElementById('categoryChips').addEventListener('click', e => {
   chip.classList.add('active');
   loadNearbyPlaces(state.pickup);
 });
+
+/* ---------- DESTINATION PLACES (near drop point) ---------- */
+function loadDestinationPlaces(dropLatLng) {
+  const section = document.getElementById('destinationSection');
+  const list = document.getElementById('destinationPlacesList');
+  if (!dropLatLng) { section.classList.add('hidden'); return; }
+
+  const sorted = PLACES.map(p => ({
+    ...p, dist: Math.round(haversineKm(dropLatLng, p.coords) * 10) / 10
+  })).sort((a, b) => a.dist - b.dist).slice(0, 4);
+
+  list.innerHTML = sorted.map(p => `
+    <div class="place-card" data-lat="${p.coords[0]}" data-lng="${p.coords[1]}" data-name="${p.name}">
+      <div class="place-left">
+        <span class="place-icon">${p.icon}</span>
+        <div>
+          <p class="place-name">${p.name}</p>
+          <p class="place-area">${p.area} &middot; ${p.rating}</p>
+        </div>
+      </div>
+      <span class="place-dist">${p.dist} km</span>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.place-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const lat = parseFloat(card.dataset.lat);
+      const lng = parseFloat(card.dataset.lng);
+      const name = card.dataset.name;
+      state.map.setView([lat, lng], 15);
+      showToast(`🎯 ${name} — a popular spot near your destination`);
+    });
+  });
+
+  section.classList.remove('hidden');
+}
 
 /* ---------- GPS BUTTON ---------- */
 document.getElementById('gpsBtn').addEventListener('click', () => {
@@ -545,6 +582,11 @@ const DRIVER_REPLIES_KN = [
 ];
 
 async function translateText(text, targetLang) {
+  if (!GEMINI_API_KEY) {
+    showToast('⚠️ Add a free Gemini API key via the profile icon to enable translation');
+    return `${text}  —  (translation unavailable: add a Gemini key in Profile)`;
+  }
+
   const prompt = `Detect the language of this text and translate it to ${LANG_NAMES[targetLang] || targetLang}. Reply ONLY with the translation, no explanation:\n\n${text}`;
   try {
     const res = await fetch(GEMINI_URL + GEMINI_API_KEY, {
@@ -553,8 +595,15 @@ async function translateText(text, targetLang) {
       body: JSON.stringify({ contents: [{ role:'user', parts:[{ text: prompt }] }], generationConfig: { maxOutputTokens: 100 } })
     });
     const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || text;
-  } catch { return text; }
+    if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return data.candidates[0].content.parts[0].text.trim();
+    }
+    throw new Error(data.error?.message || 'Gemini returned no translation');
+  } catch (err) {
+    console.warn('[Gemini Translate]', err);
+    showToast('⚠️ Translation failed — check your Gemini API key in Profile');
+    return text;
+  }
 }
 
 function addChatBubble({ main, translated, sent }) {
