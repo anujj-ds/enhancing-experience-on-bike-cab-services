@@ -12,7 +12,7 @@
 // The app uses intelligent offline fallbacks if no key is set.
 const DEFAULT_GEMINI_KEY = '';
 let GEMINI_API_KEY = localStorage.getItem('rideease_gemini_key') || DEFAULT_GEMINI_KEY;
-const GEMINI_MODEL = 'gemini-3.5-flash';
+const GEMINI_MODEL = 'gemini-1.5-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=`;
 
 const OSRM_URL = 'https://router.project-osrm.org/route/v1/driving';
@@ -581,29 +581,100 @@ const DRIVER_REPLIES_KN = [
   'ನಾನು ಪಾರ್ಕಿಂಗ್ ಲಾಟ್ ಬಳಿ ಇದ್ದೇನೆ'
 ];
 
+/* ---------- DRIVER TRANSLATION STACK (Free API + Offline Phrasebook + Gemini) ---------- */
+const SCRIPT_RANGES = {
+  kn: /[\u0C80-\u0CFF]/,
+  hi: /[\u0900-\u097F]/,
+  ta: /[\u0B80-\u0BFF]/,
+  te: /[\u0C00-\u0C7F]/,
+};
+
+function detectLang(text) {
+  for (const [lang, reg] of Object.entries(SCRIPT_RANGES)) {
+    if (reg.test(text)) return lang;
+  }
+  return 'en';
+}
+
+const PHRASEBOOK = [
+  { en: 'Where are you?', kn: 'ನೀವು ಎಲ್ಲಿದ್ದೀರಿ?', hi: 'आप कहाँ हैं?', ta: 'எங்கே இருக்கிறீர்கள்?', te: 'మీరు ఎక్కడ ఉన్నారు?' },
+  { en: 'I am at the main gate', kn: 'ನಾನು ಮುಖ್ಯ ಗೇಟ್ ಬಳಿ ಇದ್ದೇನೆ', hi: 'मैं मेन गेट पर हूँ', ta: 'நான் மெயின் கேட் அருகில் இருக்கிறேன்', te: 'నేను ಮೆయిన్ గేట్ వద్ద ఉన్నాను' },
+  { en: 'I am at the gate', kn: 'ನಾನು ಗೇಟ್‌ನಲ್ಲಿದ್ದೇನೆ', hi: 'मैं गेट पर हूँ', ta: 'நான் கேட் அருகில் இருக்கிறேன்', te: 'నేను గేట్ వద్ద ఉన్నాను' },
+  { en: 'Please come near the gate', kn: 'ದಯವಿಟ್ಟು ಮುಖ್ಯ ಗೇಟ್ ಬಳಿ ಬನ್ನಿ', hi: 'कृपया मेन गेट के पास आएं', ta: 'தயவுசெய்து கேட் அருகில் வாருங்கள்', te: 'దయచేసి గేట్ వద్దకు రండి' },
+  { en: 'Please tell the OTP', kn: 'OTP ಹೇಳಿ ಸರ್', hi: 'कृपया ओटीपी बताएं', ta: 'தயவுசெய்து OTP சொல்லுங்கள்', te: 'దయచేసి OTP చెప్పండి' },
+  { en: 'Tell OTP sir', kn: 'OTP ಹೇಳಿ ಸರ್', hi: 'कृपया ओटीपी बताएं', ta: 'தயவுசெய்து OTP சொல்லுங்கள்', te: 'దయచేసి OTP చెప్పండి' },
+  { en: 'I am at the parking lot', kn: 'ನಾನು ಪಾರ್ಕಿಂಗ್ ಲಾಟ್ ಬಳಿ ಇದ್ದೇನೆ', hi: 'मैं पार्किंग लॉट के पास हूँ', ta: 'நான் பார்க்கிங் லாட் அருகில் இருக்கிறேன்', te: 'నేను పార్కింగ్ లాట్ వద్ద ఉన్నాను' },
+  { en: 'Wait 2 minutes, coming', kn: '2 ನಿಮಿಷದಲ್ಲಿ ಬರುತ್ತಿದ್ದೇನೆ', hi: '2 मिनट में आ रहा हूँ', ta: '2 நிமிடத்தில் வருகிறேன்', te: '2 నిమిషాల్లో వస్తున్నాను' },
+  { en: 'Please wait 2 minutes', kn: 'ದಯವಿಟ್ಟು 2 ನಿಮಿಷ ಕಾಯಿರಿ', hi: 'कृपया 2 मिनट प्रतीक्षा करें', ta: 'தயவுசெய்து 2 நிமிடம் காத்திருங்கள்', te: 'దయచేసి 2 నిమిಷాలు వేచి ఉండండి' },
+  { en: 'There is some traffic, 2 min delay', kn: 'ಸ್ವಲ್ಪ ಟ್ರಾಫಿಕ್ ಇದೆ, 2 ನಿಮಿಷ ತಡವಾಗುತ್ತದೆ', hi: 'थोड़ा ट्रैफिक है, 2 मिनट की देरी होगी', ta: 'சிறிது போக்குவரத்து உள்ளது, 2 நிமிடம் தாமதம்', te: 'కొంచెం ట్రాఫిక్ ఉంది, 2 నిమిషాలు ఆలస్యం' },
+  { en: 'I have arrived', kn: 'ನಾನು ತಲುಪಿದ್ದೇನೆ', hi: 'मैं पहुँच गया हूँ', ta: 'நான் வந்துவிட்டேன்', te: 'నేను వచ్చేశాను' },
+  { en: 'Please wear a helmet', kn: 'ದಯವಿಟ್ಟು ಹೆಲ್ಮೆಟ್ ಧರಿಸಿ', hi: 'कृपया हेलमेट पहनें', ta: 'தயவுசெய்து ஹெல்மெட் அணியுங்கள்', te: 'దయచేసి హెల్మెట్ ಧరించండి' },
+  { en: 'Sir, I am at the gate', kn: 'ಸರ್, ನಾನು ಗೇಟ್ ಬಳಿ ಇದ್ದೇನೆ', hi: 'सर, मैं गेट के पास हूँ', ta: 'சார், நான் கேட் அருகில் இருக்கிறேன்', te: 'సార్, నేను గేట్ వద్ద ఉన్నాను' },
+  { en: 'Ok, got it', kn: 'ಸರಿ, ಅರ್ಥವಾಯಿತು', hi: 'ठीक है, समझ गया', ta: 'சரி, புரிந்தது', te: 'సరే, అర్థమైంది' }
+];
+
+function phrasebookLookup(text, targetLang) {
+  const clean = (text || '').trim().toLowerCase();
+  for (const entry of PHRASEBOOK) {
+    for (const [lang, val] of Object.entries(entry)) {
+      const v = (val || '').toLowerCase();
+      if (clean === v || (clean.length > 3 && (clean.includes(v) || v.includes(clean)))) {
+        return entry[targetLang] || entry.en;
+      }
+    }
+  }
+  return null;
+}
+
 async function translateText(text, targetLang) {
-  if (!GEMINI_API_KEY) {
-    showToast('⚠️ Add a free Gemini API key via the profile icon to enable translation');
-    return `${text}  —  (translation unavailable: add a Gemini key in Profile)`;
+  if (!text || !text.trim()) return text;
+
+  // Don't translate if text already matches target language script
+  const detected = detectLang(text);
+  if (detected === targetLang) return text;
+
+  // 1. Instant Google Translate (free client endpoint, no API key required)
+  try {
+    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' +
+      encodeURIComponent(targetLang) + '&dt=t&q=' + encodeURIComponent(text);
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data?.[0])) {
+        const translated = data[0].map(chunk => chunk?.[0] || '').join('').trim();
+        if (translated) return translated;
+      }
+    }
+  } catch (err) {
+    console.warn('[GTX Translate failed]', err);
   }
 
-  const prompt = `Detect the language of this text and translate it to ${LANG_NAMES[targetLang] || targetLang}. Reply ONLY with the translation, no explanation:\n\n${text}`;
-  try {
-    const res = await fetch(GEMINI_URL + GEMINI_API_KEY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ role:'user', parts:[{ text: prompt }] }], generationConfig: { maxOutputTokens: 100 } })
-    });
-    const data = await res.json();
-    if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-      return data.candidates[0].content.parts[0].text.trim();
+  // 2. Offline Phrasebook match (for common rider & pilot phrases)
+  const pb = phrasebookLookup(text, targetLang);
+  if (pb) return pb;
+
+  // 3. Fallback to Gemini if user configured a key in Profile
+  if (GEMINI_API_KEY) {
+    try {
+      const prompt = `Detect language of this text and translate it to ${LANG_NAMES[targetLang] || targetLang}. Reply ONLY with translation, no explanation:\n\n${text}`;
+      const res = await fetch(GEMINI_URL + GEMINI_API_KEY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 100 }
+        })
+      });
+      const data = await res.json();
+      if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+        return data.candidates[0].content.parts[0].text.trim();
+      }
+    } catch (err) {
+      console.warn('[Gemini Translate failed]', err);
     }
-    throw new Error(data.error?.message || 'Gemini returned no translation');
-  } catch (err) {
-    console.warn('[Gemini Translate]', err);
-    showToast('⚠️ Translation failed — check your Gemini API key in Profile');
-    return text;
   }
+
+  return text;
 }
 
 function addChatBubble({ main, translated, sent }) {
